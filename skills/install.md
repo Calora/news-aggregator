@@ -23,7 +23,7 @@ node --version     # 需要 18+
 ### 2. 克隆项目
 
 ```bash
-git clone https://github.com/QingSia/news-aggregator.git
+git clone https://github.com/Calora/news-aggregator.git
 cd news-aggregator
 ```
 

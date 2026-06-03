@@ -60,7 +60,7 @@ news-aggregator/
 ### 1. 克隆并安装依赖
 
 ```bash
-git clone https://github.com/yourname/news-aggregator.git
+git clone https://github.com/Calora/news-aggregator.git
 cd news-aggregator
 pip install -r backend/requirements.txt
 cd frontend && npm install && cd ..
