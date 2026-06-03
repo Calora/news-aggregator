@@ -1,84 +1,82 @@
-# NewsDigest — AI 驱动的技术新闻聚合器
+# 📰 NewsDigest
 
-面向区块链、AI、密码学技术研究者的个性化新闻聚合工具。自动抓取多源信息，用大模型做分类、评分、中文摘要，每日生成精选日报。
+> 🤖 AI 替你读新闻 — 自动抓取 · 智能分类 · 每日精选日报
 
-## 特性
+每天醒来，AI 已经帮你挑好了最值得读的 10 条技术新闻。不再被几百封邮件和几十个 RSS 源淹没。
 
-- **多源聚合**：RSS、网页抓取、邮件（Gmail API / IMAP）三条数据通道
-- **AI 分类**：基于 DeepSeek 做三维分类（领域 × 技术标签 × 内容载体）+ 智能评分
-- **每日日报**：早 8 点自动生成当日精选（≤10 条），侧栏日期归档
-- **噪音过滤**：自动剔除行情/投机/灌水内容
-- **我的收藏**：收藏感兴趣的文章，支持局域网多人使用
-- **自动去重**：URL + 标题相似度双重去重
+<p align="center">
+  <img src="https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square" alt="FastAPI">
+  <img src="https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react&logoColor=white" alt="React">
+  <img src="https://img.shields.io/badge/AI-DeepSeek-4B6BFB?style=flat-square" alt="DeepSeek">
+  <img src="https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square" alt="License">
+</p>
 
-## 技术栈
+---
 
-| 层 | 技术 |
-|----|------|
-| 后端 | Python · FastAPI · APScheduler · SQLite |
-| 前端 | React · TypeScript · Tailwind CSS · Vite |
-| AI | DeepSeek API（OpenAI 兼容接口） |
+## ✨ 为什么你需要这个
 
-## 项目结构
+你订阅了十几个新闻源，邮箱里塞满了 newsletter。每天光是扫标题就要花半小时，更不用说判断哪篇值得细读。
+
+NewsDigest 帮你做三件事：
+
+1. 📥 **自动收** — RSS + 网页 + 邮件三通道抓取，你不用再打开任何邮箱和阅读器
+2. 🧠 **帮你读** — DeepSeek 大模型自动翻译英文、分类打标签、评分过滤噪音
+3. 📋 **挑重点** — 每天早上 8 点，一份 ≤10 条精选的日报已经整装待发
+
+---
+
+## 🪄 看一眼长什么样
+
+| 📅 每日日报 | 📋 全部动态 |
+|-------------|------------|
+| 左侧日期归档，每天 4 个领域分组 | 多维度筛选，卡片式浏览 |
+| 每篇带评分 + 推荐理由 + 点题标签 | 按领域 / 类型 / 标签自由组合 |
+| 早 8 点自动生成，未读先看 | 7 分以下自动过滤，不浪费你的注意力 |
+
+---
+
+## 🛠 技术栈
 
 ```
-news-aggregator/
-├── start.bat              # Windows 一键启动
-├── health_check.py        # 外部健康巡检
-├── backend/
-│   ├── .env.example       # 配置模板
-│   ├── app/
-│   │   ├── main.py        # FastAPI 入口
-│   │   ├── models.py      # 数据模型（5张表）
-│   │   ├── routers/       # API 路由
-│   │   └── services/      # 核心业务逻辑
-│   │       ├── web_fetcher.py    # RSS / 网页抓取
-│   │       ├── email_fetcher.py  # IMAP 邮件拉取
-│   │       ├── gmail_fetcher.py  # Gmail API 邮件拉取
-│   │       ├── classifier.py     # AI 分类 + 评分 + 摘要
-│   │       ├── deduplicator.py   # URL + 标题去重
-│   │       └── pipeline.py       # 完整流水线
-│   └── scheduler.py       # 定时任务（每4小时抓取 + 每日8点生成日报）
-└── frontend/
-    └── src/
-        ├── pages/          # 页面组件
-        │   ├── DailyReportPage.tsx  # 日报页
-        │   ├── AllNewsPage.tsx      # 全部动态
-        │   ├── SourcesPage.tsx      # 数据源管理
-        │   └── BookmarksPage.tsx    # 我的收藏
-        └── components/     # UI 组件
+📡 数据层                        🧠 AI 层                         🖥 展示层
+ ┌──────────┐                 ┌──────────┐                 ┌──────────┐
+ │ RSS      │                 │ DeepSeek │                 │ React    │
+ │ Gmail API│  ──→ FastAPI ──→│   分类    │  ──→ REST ──→ │ Tailwind │
+ │ IMAP     │                 │   评分    │                 │ Vite     │
+ │ 网页抓取 │                 │   翻译    │                 │          │
+ └──────────┘                 └──────────┘                 └──────────┘
 ```
 
-## 快速开始
+---
 
-### 前置条件
+## 🚀 3 分钟跑起来
 
-- Python 3.10+
-- Node.js 18+
-- DeepSeek API Key（[platform.deepseek.com](https://platform.deepseek.com)）
+### 你需要准备
 
-### 1. 克隆并安装依赖
+- 🐍 Python 3.10+
+- 🟢 Node.js 18+
+- 🔑 DeepSeek API Key → [免费注册获取](https://platform.deepseek.com) 只需 10 块钱能用一个月
+
+### 安装
 
 ```bash
+# 克隆
 git clone https://github.com/Calora/news-aggregator.git
 cd news-aggregator
+
+# 装依赖
 pip install -r backend/requirements.txt
 cd frontend && npm install && cd ..
-```
 
-### 2. 配置
-
-```bash
+# 配置
 cp backend/.env.example backend/.env
-# 编辑 backend/.env，填入 DeepSeek API Key
+# 编辑 backend/.env，填一行：DEEPSEEK_API_KEY=sk-你的key
 ```
 
-最小配置只需要 `DEEPSEEK_API_KEY`，其余可选。
-
-### 3. 启动
+### 启动
 
 ```bash
-# Windows
+# Windows 一键
 start.bat
 
 # macOS / Linux
@@ -86,34 +84,85 @@ cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 &
 cd frontend && npm run dev -- --host 0.0.0.0
 ```
 
-浏览器打开 `http://localhost:5173`
+打开 `http://localhost:5173`，第一次运行会自动批量抓取所有信源。
 
-### 可选：配置邮箱抓取
+---
 
-系统支持两种邮箱接入方式：
+## 📦 项目结构
 
-**Gmail API（推荐，国内需代理）**：
-1. 创建 Google Cloud OAuth 桌面客户端 → 下载 `credentials.json` 放到 `backend/`
-2. 运行 `python backend/setup_gmail_oauth.py` 完成授权
-3. 在 `.env` 中配置 `GMAIL_CLIENT_ID` 等 + `HTTP_PROXY` 代理地址
+```
+news-aggregator/
+├── ⚡ start.bat              # Windows 一键启动三件套
+├── 🩺 health_check.py        # 外部健康巡检，每天自检4次
+├── 🔧 backend/               # Python FastAPI
+│   ├── .env.example          # 配置模板（只需填 API Key）
+│   └── app/
+│       ├── main.py           # 🚪 入口
+│       ├── models.py         # 📊 5 张数据表
+│       ├── routers/          # 🔀 API 路由
+│       └── services/
+│           ├── web_fetcher.py     # 🌐 RSS + 网页抓取
+│           ├── email_fetcher.py   # ✉️ IMAP 邮件
+│           ├── gmail_fetcher.py   # 📨 Gmail API（走代理）
+│           ├── classifier.py      # 🤖 AI 分类 + 评分 + 翻译
+│           ├── deduplicator.py    # 🧹 去重
+│           └── pipeline.py        # ⛓ 完整流水线
+├── 🎨 frontend/              # React + Tailwind
+│   └── src/
+│       ├── pages/            # 📄 4 个页面
+│       └── components/       # 🧩 UI 组件
+└── 🧠 skills/                # Claude Code Skill 定义
+```
 
-**IMAP（QQ / 163 邮箱）**：
-1. 邮箱设置中开启 IMAP/SMTP 并生成授权码
-2. 在前端「数据源管理」页面添加邮箱账号
+---
 
-## 常见问题
+## 🔌 可选：接入私人邮箱
 
-**Q: 日报没有内容？**  
-查看「数据源管理 → 抓取日志」，确认最近有抓取记录。如果没有，点「手动抓取」触发。
+如果想把 Medium Daily Digest、InfoQ 等邮件内容也自动纳入：
 
-**Q: 文章全是英文？**  
-检查 DeepSeek API Key 是否有效。系统依赖 AI 做翻译和分类。
+| 方式 | 难度 | 适合 |
+|------|------|------|
+| 📨 Gmail API | ⭐⭐⭐ | 有梯子，稳定好用 |
+| ✉️ QQ / 163 IMAP | ⭐ | 国内直连，授权码即用 |
 
-**Q: 局域网分享？**  
-前端启动在 `0.0.0.0` 后，局域网设备访问 `http://<你的IP>:5173`。
+在前端「数据源管理」页面即可配置，不需要改代码。
 
-## License
+---
 
-Copyright 2026 QingSia
+## 💬 FAQ
 
-Licensed under the Apache License, Version 2.0.
+<details>
+<summary>日报为啥是空的？</summary>
+
+去「数据源管理 → 手动抓取」点一下，等 10-30 秒。如果还是空，检查 DeepSeek Key 是否有效。
+</details>
+
+<details>
+<summary>为什么文章全是英文？</summary>
+
+DeepSeek API Key 没配或失效。系统依赖 AI 做翻译和中文摘要。
+</details>
+
+<details>
+<summary>想和同事一起看？</summary>
+
+前端启动在 `0.0.0.0:5173`，局域网任何设备访问 `http://<你的IP>:5173` 即可。
+</details>
+
+<details>
+<summary>邮件拉取报错？</summary>
+
+Gmail API 需要 OAuth 授权，跑 `python backend/setup_gmail_oauth.py` 完成。QQ/163 需要去邮箱设置里生成授权码（不是登录密码）。
+</details>
+
+---
+
+## 📄 License
+
+Copyright © 2026 [QingSia](https://github.com/Calora) · Apache License 2.0
+
+---
+
+<p align="center">
+  <sub>Built with ❤️ + 🧠 + ⛓️</sub>
+</p>
