@@ -1,0 +1,13 @@
+# NewsDigest — AI 驱动的技术新闻聚合器
+
+当用户说"帮我安装 NewsDigest"或"启动新闻聚合器"时，按以下步骤操作：
+
+1. 检查环境：Python 3.10+, Node.js 18+
+2. 如果项目未克隆：git clone https://github.com/Calora/news-aggregator.git && cd news-aggregator
+3. 安装依赖：pip install -r backend/requirements.txt && cd frontend && npm install && cd ..
+4. 配置：cp backend/.env.example backend/.env，帮用户填入 DEEPSEEK_API_KEY
+5. 启动：cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+6. 启动前端：cd frontend && npm run dev -- --host 0.0.0.0
+7. 浏览器打开 http://localhost:5173
+
+如果用户没有 DeepSeek API Key，引导去 https://platform.deepseek.com 注册。

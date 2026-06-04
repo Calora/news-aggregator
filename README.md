@@ -61,13 +61,15 @@ NewsDigest 帮你做三件事：
 - 🟢 Node.js 18+
 - 🔑 DeepSeek API Key → [免费注册获取](https://platform.deepseek.com) 只需 10 块钱能用一个月
 
-### 方式一：Claude Code Skill 一键安装 🤖
+### 方式一：AI Agent 一键安装 🤖
 
-在 Claude Code 中直接说：
+项目内置了多平台 Skill 定义，AI 会自动完成克隆、依赖、配置和启动。
 
-> 帮我安装这个 skill：https://github.com/Calora/news-aggregator
-
-模型会自动完成克隆、安装依赖、引导配置和启动，不需要你操心路径。
+| 平台 | 安装方式 |
+|------|---------|
+| **Claude Code** | 说：`帮我安装这个 skill：https://github.com/Calora/news-aggregator` |
+| **Cursor** | 项目 `.cursorrules` 已就绪，打开后说：`帮我安装 NewsDigest` |
+| **GitHub Copilot / Codex** | 项目 `.github/copilot-instructions.md` 已就绪，说：`install NewsDigest` |
 
 ### 方式二：手动克隆安装
 
