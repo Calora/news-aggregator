@@ -143,6 +143,14 @@ def process_unclassified(db: Session) -> int:
     return processed
 
 
+def _clean_reason(reason: str) -> str:
+    """Strip redundant '评分X分：' or '推荐理由：' prefix from AI-generated reasons."""
+    import re
+    reason = re.sub(r'^评分\s*\d+\s*分[：:]\s*', '', reason)
+    reason = re.sub(r'^推荐理由[：:]\s*', '', reason)
+    return reason
+
+
 def _classify_only(article: Article) -> bool:
     """Classify and summarize without changing the score (for pre-scored articles like CCF-A papers)."""
     content = (article.content_preview or "")[:2000]
@@ -173,7 +181,7 @@ def _classify_only(article: Article) -> bool:
             score = int(score)
             # Floor at 8 for CCF-A papers
             article.relevance_score = max(8, min(10, score))
-        article.reason = score_result.get("reason", "")
+        article.reason = _clean_reason(score_result.get("reason", ""))
 
     # Generate Chinese summary
     summary_result = chat_json(SUMMARY_PROMPT.format(
@@ -254,7 +262,7 @@ def _process_one(article: Article, db: Session) -> bool:
         score = min(score, max(score - 3, 1))
 
     article.relevance_score = max(0, min(10, score))
-    article.reason = score_result.get("reason", "")
+    article.reason = _clean_reason(score_result.get("reason", ""))
 
     # Step 4: Chinese title + summary (for all articles, regardless of score)
     summary_result = chat_json(SUMMARY_PROMPT.format(
@@ -266,7 +274,7 @@ def _process_one(article: Article, db: Session) -> bool:
         title_cn = summary_result.get("title_cn", "")
         article.summary_cn = summary_result.get("summary", "")
         if article.relevance_score >= 7:
-            article.reason = summary_result.get("reason") or article.reason
+            article.reason = _clean_reason(summary_result.get("reason") or article.reason)
         # If English title, replace with Chinese; otherwise keep original
         if title_cn and _is_mostly_english(article.title):
             article.title = title_cn

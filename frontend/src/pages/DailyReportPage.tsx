@@ -203,7 +203,7 @@ function ReportItem({ article }: { article: Article }) {
           {article.reason && (
             <div className="bg-amber-50/70 rounded-lg p-2.5 mt-2">
               <p className="text-xs text-amber-800 leading-relaxed">
-                <span className="font-medium">💡 推荐理由：</span>{article.reason.replace(/^推荐理由[：:]?\s*/g, '')}
+                <span className="font-medium">💡 推荐理由：</span>{article.reason.replace(/^推荐理由[：:]?\s*/g, '').replace(/^评分\s*\d+\s*分[：:]\s*/g, '')}
               </p>
             </div>
           )}

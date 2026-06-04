@@ -75,7 +75,7 @@ export default function ArticleCard({ article, compact }: Props) {
       {article.reason && (
         <div className="bg-amber-50/70 rounded-lg p-3 mt-2 mb-2">
           <p className="text-xs text-amber-800 leading-relaxed">
-            <span className="font-medium">💡 推荐理由：</span>{article.reason.replace(/^推荐理由[：:]?\s*/g, '')}
+            <span className="font-medium">💡 推荐理由：</span>{article.reason.replace(/^推荐理由[：:]?\s*/g, '').replace(/^评分\s*\d+\s*分[：:]\s*/g, '')}
           </p>
         </div>
       )}
