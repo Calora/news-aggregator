@@ -228,6 +228,7 @@ function WebTab() {
 
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', url: '', source_type: 'RSS' })
+  const [testPassed, setTestPassed] = useState(false)
   const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
 
   const createMutation = useMutation({
@@ -236,6 +237,8 @@ function WebTab() {
       queryClient.invalidateQueries({ queryKey: ['webSources'] })
       setShowForm(false)
       setForm({ name: '', url: '', source_type: 'RSS' })
+      setTestPassed(false)
+      setTestResult(null)
     },
   })
 
@@ -246,8 +249,14 @@ function WebTab() {
 
   const testMutation = useMutation({
     mutationFn: api.testWebSource,
-    onSuccess: (res) => setTestResult(res),
-    onError: () => setTestResult({ ok: false, message: '测试请求失败' }),
+    onSuccess: (res) => {
+      setTestResult(res)
+      setTestPassed(res.ok)
+    },
+    onError: () => {
+      setTestResult({ ok: false, message: '测试请求失败' })
+      setTestPassed(false)
+    },
   })
 
   const builtInSources = [
@@ -306,21 +315,22 @@ function WebTab() {
           )}
           <div className="flex gap-2">
             <button
-              onClick={() => createMutation.mutate()}
-              disabled={createMutation.isPending || !form.name || !form.url}
-              className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {createMutation.isPending ? '保存中...' : '保存'}
-            </button>
-            <button
               onClick={() => testMutation.mutate(form.url)}
               disabled={testMutation.isPending || !form.url}
-              className="px-4 py-1.5 text-sm border rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+              className="px-4 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
               {testMutation.isPending ? '测试中...' : '测试连接'}
             </button>
             <button
-              onClick={() => { setShowForm(false); setTestResult(null) }}
+              onClick={() => createMutation.mutate()}
+              disabled={createMutation.isPending || !testPassed || !form.name}
+              className="px-4 py-1.5 bg-emerald-600 text-white text-sm rounded-lg hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              title={!testPassed ? '请先测试连接通过' : ''}
+            >
+              {createMutation.isPending ? '保存中...' : '保存'}
+            </button>
+            <button
+              onClick={() => { setShowForm(false); setTestResult(null); setTestPassed(false) }}
               className="px-4 py-1.5 text-sm border rounded-lg text-gray-500 hover:bg-gray-50"
             >
               取消
