@@ -271,8 +271,14 @@ function WebTab() {
     { name: 'IACR ePrint', url: 'https://eprint.iacr.org/rss', type: 'RSS', group: 'ZK/密码学' },
     { name: 'ZK Mesh', url: 'https://zkmesh.substack.com/feed', type: 'RSS', group: 'ZK/密码学' },
     { name: 'Zero Knowledge Blog', url: 'https://zeroknowledge.fm/feed', type: 'RSS', group: 'ZK/密码学' },
-    { name: 'Hacker News', url: 'https://hnrss.org/frontpage', type: 'RSS', group: 'AI/技术' },
+    { name: 'Vitalik Buterin Blog', url: 'https://vitalik.eth.limo/feed.xml', type: 'RSS', group: '区块链' },
     { name: 'Ethereum Foundation Blog', url: 'https://blog.ethereum.org/feed.xml', type: 'RSS', group: '区块链' },
+    { name: 'Paradigm', url: 'https://www.paradigm.xyz/feed', type: 'RSS', group: '区块链' },
+    { name: 'StarkWare', url: 'https://starkware.co/feed/', type: 'RSS', group: 'ZK/密码学' },
+    { name: 'Google AI Blog', url: 'https://blog.research.google/feeds/posts/default', type: 'RSS', group: 'AI/技术' },
+    { name: 'OpenAI Blog', url: 'https://openai.com/blog/rss.xml', type: 'RSS', group: 'AI/技术' },
+    { name: 'BAIR (Berkeley AI)', url: 'https://bair.berkeley.edu/blog/feed.xml', type: 'RSS', group: 'AI/技术' },
+    { name: 'Hacker News', url: 'https://hnrss.org/frontpage', type: 'RSS', group: 'AI/技术' },
   ]
 
   return (

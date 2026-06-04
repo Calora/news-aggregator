@@ -18,7 +18,15 @@ DEFAULT_RSS_SOURCES = [
     ("Zero Knowledge Blog", "https://zeroknowledge.fm/feed", "RSS"),
     # AI / Tech
     ("Hacker News", "https://hnrss.org/frontpage", "RSS"),
+    ("Google AI Blog", "https://blog.research.google/feeds/posts/default", "RSS"),
+    ("OpenAI Blog", "https://openai.com/blog/rss.xml", "RSS"),
+    ("BAIR (Berkeley AI)", "https://bair.berkeley.edu/blog/feed.xml", "RSS"),
+    # Ethereum ecosystem
     ("Ethereum Foundation Blog", "https://blog.ethereum.org/feed.xml", "RSS"),
+    ("Vitalik Buterin Blog", "https://vitalik.eth.limo/feed.xml", "RSS"),
+    # ZK / L2
+    ("StarkWare", "https://starkware.co/feed/", "RSS"),
+    ("Paradigm", "https://www.paradigm.xyz/feed", "RSS"),
 ]
 
 
