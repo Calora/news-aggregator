@@ -39,6 +39,9 @@ export default function Layout() {
       <main className="max-w-5xl mx-auto px-5 py-8">
         <Outlet />
       </main>
+      <footer className="text-center py-4 text-xs text-gray-400">
+        Copyright © 2026 QingSia · Licensed under Apache 2.0
+      </footer>
     </div>
   )
 }
