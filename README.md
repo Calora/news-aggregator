@@ -120,10 +120,16 @@ cd frontend && npm run dev -- --host 0.0.0.0
 
 ```
 news-aggregator/
-├── ⚡ start.bat              # Windows 一键启动三件套
-├── 🩺 health_check.py        # 外部健康巡检，每天自检4次
+├── ⚡ start.bat              # Windows 一键启动
+├── 🩺 health_check.py        # 自巡检脚本，每天4次
+├── 🧠 skills/                # Claude Code Skill 定义
+├── .cursorrules              # Cursor IDE 指令
+├── .github/                  # GitHub Copilot / Codex 指令
+├── docs/                     # 截图 & 文档
 ├── 🔧 backend/               # Python FastAPI
-│   ├── .env.example          # 配置模板（只需填 API Key）
+│   ├── .env.example          # 配置模板
+│   ├── requirements.txt      # Python 依赖
+│   ├── scheduler.py          # 定时任务
 │   └── app/
 │       ├── main.py           # 🚪 入口
 │       ├── models.py         # 📊 5 张数据表
@@ -131,15 +137,15 @@ news-aggregator/
 │       └── services/
 │           ├── web_fetcher.py     # 🌐 RSS + 网页抓取
 │           ├── email_fetcher.py   # ✉️ IMAP 邮件
-│           ├── gmail_fetcher.py   # 📨 Gmail API（走代理）
+│           ├── gmail_fetcher.py   # 📨 Gmail API
 │           ├── classifier.py      # 🤖 AI 分类 + 评分 + 翻译
 │           ├── deduplicator.py    # 🧹 去重
 │           └── pipeline.py        # ⛓ 完整流水线
-├── 🎨 frontend/              # React + Tailwind
-│   └── src/
-│       ├── pages/            # 📄 4 个页面
-│       └── components/       # 🧩 UI 组件
-└── 🧠 skills/                # Claude Code Skill 定义
+└── 🎨 frontend/              # React + Tailwind + Vite
+    └── src/
+        ├── pages/            # 📄 4 个页面
+        ├── components/       # 🧩 UI 组件
+        └── api/              # 🔌 API 客户端
 ```
 
 ---
