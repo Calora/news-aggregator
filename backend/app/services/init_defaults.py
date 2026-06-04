@@ -18,6 +18,7 @@ DEFAULT_RSS_SOURCES = [
     ("Zero Knowledge Blog", "https://zeroknowledge.fm/feed", "RSS"),
     # AI / Tech
     ("Hacker News", "https://hnrss.org/frontpage", "RSS"),
+    ("Ethereum Foundation Blog", "https://blog.ethereum.org/feed.xml", "RSS"),
 ]
 
 
