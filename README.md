@@ -150,6 +150,39 @@ news-aggregator/
 
 ---
 
+## 📡 预置信源（20 个）
+
+系统启动时自动加载，涵盖区块链、密码学、AI 三大方向。
+
+**🔗 区块链**
+[Ethresear.ch](https://ethresear.ch/posts.rss) ·
+[The Block](https://www.theblock.co/rss) ·
+[Messari](https://messari.io/feed) ·
+[a16z Crypto](https://a16zcrypto.com/feed/) ·
+[CoinTelegraph](https://cointelegraph.com/rss) ·
+[Decrypt](https://decrypt.co/feed) ·
+[Ethereum Foundation Blog](https://blog.ethereum.org/feed.xml) ·
+[Vitalik Buterin Blog](https://vitalik.eth.limo/feed.xml) ·
+[Paradigm](https://www.paradigm.xyz/feed)
+
+**🔐 密码学 / ZK**
+[IACR ePrint](https://eprint.iacr.org/rss) ·
+[ZK Mesh](https://zkmesh.substack.com/feed) ·
+[Zero Knowledge Blog](https://zeroknowledge.fm/feed) ·
+[StarkWare](https://starkware.co/feed/)
+
+**🤖 AI / 技术**
+[Hacker News](https://hnrss.org/frontpage) ·
+[InfoQ](https://feed.infoq.com/) ·
+[Google AI Blog](https://blog.research.google/feeds/posts/default) ·
+[OpenAI Blog](https://openai.com/blog/rss.xml) ·
+[BAIR (Berkeley AI)](https://bair.berkeley.edu/blog/feed.xml) ·
+[Medium (Blockchain)](https://medium.com/feed/tag/blockchain)
+
+> 在前端「数据源管理 → Web 信源 → 预置信源」中一键添加，也可手动填入任意 RSS / 网页 URL。
+
+---
+
 ## 🎯 自定义关注领域
 
 系统默认围绕 **区块链 / AI / 密码学与隐私计算 / 数字资产** 四个领域做分类和过滤。如果你关注的方向不同，可以自行修改，**不需要改后端架构**。
