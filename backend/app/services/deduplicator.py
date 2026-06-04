@@ -15,9 +15,10 @@ def _normalize_url(url: str) -> str:
     return url
 
 
-def is_duplicate(title: str, url: str, db: Session) -> bool:
-    """Check if a new article (not yet persisted) would be a duplicate.
-    Call BEFORE saving to DB. Returns True if duplicate exists.
+def is_duplicate(title: str, url: str, db: Session) -> int | None:
+    """Check if a new article would be a duplicate.
+    Returns existing article ID if duplicate, None otherwise.
+    Call BEFORE saving to DB — if duplicate, update the existing article instead of skipping.
     """
     # 1. URL match (normalized — strip #fragment)
     if url:
@@ -25,14 +26,13 @@ def is_duplicate(title: str, url: str, db: Session) -> bool:
         all_articles = db.query(Article).all()
         for a in all_articles:
             if _normalize_url(a.url) == normalized:
-                return True
+                return a.id  # Return existing article ID for update
 
-    # 2. Title similarity check (no time window — check all)
+    # 2. Title similarity check (7 days)
     title_tokens = _tokenize(title)
     if len(title_tokens) < 2:
-        return False
+        return None
 
-    # Check against recent articles (7 days)
     since = beijing_now() - timedelta(days=7)
     recent = db.query(Article).filter(Article.fetched_at >= since).all()
 
@@ -40,9 +40,9 @@ def is_duplicate(title: str, url: str, db: Session) -> bool:
         existing_tokens = _tokenize(existing.title)
         sim = _jaccard(title_tokens, existing_tokens)
         if sim > 0.60:
-            return True
+            return existing.id
 
-    return False
+    return None
 
 
 def cleanup_duplicates(db: Session) -> int:

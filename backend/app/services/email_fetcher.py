@@ -95,9 +95,20 @@ def _fetch_account(acc: EmailAccount, db_session) -> int:
             if article_url and article_url in existing_urls:
                 continue
 
-            # Title-based dedup check
+            # Dedup check: if same URL/thread, update existing article with fresh content
             from .deduplicator import is_duplicate
-            if is_duplicate(subject, article_url or "", db_session):
+            existing_id = is_duplicate(subject, article_url or "", db_session)
+            if existing_id:
+                existing = db_session.query(Article).filter(Article.id == existing_id).first()
+                if existing:
+                    existing.title = subject[:1024]
+                    if body_text:
+                        existing.content_preview = body_text[:500]
+                    existing.publish_date = beijing_now()
+                    existing.fetched_at = beijing_now()
+                    existing.relevance_score = 0
+                    existing.summary_cn = None
+                    db_session.commit()
                 continue
 
             if article_url:

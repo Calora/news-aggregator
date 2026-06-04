@@ -82,9 +82,26 @@ def _fetch_rss(src: WebSource, db_session) -> int:
         if link and link in existing_urls:
             continue
 
-        # Title-based dedup check
+        # Extract content early (needed for dedup update)
+        content = ""
+        if hasattr(entry, "summary"):
+            content = _clean_html(entry.summary)[:1000]
+        if hasattr(entry, "content") and entry.content:
+            content = _clean_html(entry.content[0].value)[:1000]
+
+        # Dedup check: if same URL/thread, update existing article with fresh content
         from .deduplicator import is_duplicate
-        if is_duplicate(title, link, db_session):
+        existing_id = is_duplicate(title, link, db_session)
+        if existing_id:
+            existing = db_session.query(Article).filter(Article.id == existing_id).first()
+            if existing:
+                existing.title = title[:1024]
+                existing.content_preview = content[:500] if content else existing.content_preview
+                existing.publish_date = beijing_now()
+                existing.fetched_at = beijing_now()
+                existing.relevance_score = 0  # Re-classify with new content
+                existing.summary_cn = None
+                db_session.commit()
             continue
 
         pub_date = None
@@ -100,12 +117,6 @@ def _fetch_rss(src: WebSource, db_session) -> int:
                 pub_date = datetime.fromtimestamp(mktime(entry.updated_parsed))
             except Exception:
                 pass
-
-        content = ""
-        if hasattr(entry, "summary"):
-            content = _clean_html(entry.summary)[:1000]
-        if hasattr(entry, "content") and entry.content:
-            content = _clean_html(entry.content[0].value)[:1000]
 
         # Detect format from source name
         fmt = "行业动态"

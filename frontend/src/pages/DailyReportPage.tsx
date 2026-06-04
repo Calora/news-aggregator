@@ -87,10 +87,14 @@ export default function DailyReportPage() {
                     <p className={`text-xs leading-relaxed line-clamp-2 ${isSelected ? 'text-gray-600' : 'text-gray-400'}`}>
                       {item.headline}
                     </p>
+                  ) : item.article_count > 0 ? (
+                    <p className='text-xs text-gray-400'>含 {item.article_count} 条精选</p>
                   ) : (
                     <p className='text-xs text-gray-300 italic'>暂无内容</p>
                   )}
-                  <p className='text-[10px] text-gray-300 mt-1'>{item.article_count} 条精选</p>
+                  {item.article_count > 0 && item.headline && (
+                    <p className='text-[10px] text-gray-300 mt-1'>{item.article_count} 条精选</p>
+                  )}
                 </button>
               )
             })}
