@@ -1,6 +1,7 @@
 # 📰 NewsDigest
 
-> 🤖 AI 替你读新闻 — 自动抓取 · 智能分类 · 每日精选日报
+> 🤖 AI驱动的个性化技术新闻聚合器 — 专注区块链·数字货币·AI·密码学 — 自动抓取、智能分类、每日精选日报
+> AI-powered personalized tech news aggregator — focused on blockchain · crypto · AI · cryptography — auto-fetch, smart classify, daily curated digest
 
 每天醒来，AI 已经帮你挑好了最值得读的 10 条技术新闻。不再被几百封邮件和几十个 RSS 源淹没。
 
