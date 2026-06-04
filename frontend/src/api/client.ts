@@ -70,6 +70,9 @@ export const api = {
   deleteWebSource: (id: number) =>
     request<void>(`/sources/web/${id}`, { method: 'DELETE' }),
 
+  testWebSource: (url: string) =>
+    request<{ ok: boolean; message: string }>('/sources/web/test', { method: 'POST', body: JSON.stringify({ url }) }),
+
   // Fetch
   triggerFetch: () =>
     request<{ ok: boolean; message: string }>('/fetch', { method: 'POST' }),

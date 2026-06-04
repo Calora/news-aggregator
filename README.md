@@ -38,13 +38,13 @@ NewsDigest 帮你做三件事：
 ## 🛠 技术栈
 
 ```
-📡 数据层                        🧠 AI 层                         🖥 展示层
- ┌──────────┐                 ┌──────────┐                 ┌──────────┐
- │ RSS      │                 │ DeepSeek │                 │ React    │
- │ Gmail API│  ──→ FastAPI ──→│   分类    │  ──→ REST ──→ │ Tailwind │
- │ IMAP     │                 │   评分    │                 │ Vite     │
- │ 网页抓取 │                 │   翻译    │                 │          │
- └──────────┘                 └──────────┘                 └──────────┘
+📡 数据采集 ────→ 🧠 AI 处理 ────→ 🖥 展示层
+  RSS            DeepSeek API       React + TypeScript
+  Gmail API       · 三维分类        Tailwind CSS
+  IMAP 邮箱       · 智能评分        Vite
+  网页抓取        · 中英翻译
+       ↓                ↓                ↓
+    FastAPI  ─────→  SQLite  ←─────  REST API
 ```
 
 ---
@@ -57,7 +57,15 @@ NewsDigest 帮你做三件事：
 - 🟢 Node.js 18+
 - 🔑 DeepSeek API Key → [免费注册获取](https://platform.deepseek.com) 只需 10 块钱能用一个月
 
-### 安装
+### 方式一：Claude Code Skill 一键安装 🤖
+
+在 Claude Code 中直接说：
+
+> 帮我安装这个 skill：https://github.com/Calora/news-aggregator
+
+模型会自动完成克隆、安装依赖、引导配置和启动，不需要你操心路径。
+
+### 方式二：手动克隆安装
 
 ```bash
 # 克隆
@@ -118,14 +126,19 @@ news-aggregator/
 
 ## 🔌 可选：接入私人邮箱
 
-如果想把 Medium Daily Digest、InfoQ 等邮件内容也自动纳入：
+如果你有 Medium、InfoQ 等邮件订阅，可以接入 Gmail 自动将邮件中的文章链接纳入新闻流。
 
-| 方式 | 难度 | 适合 |
-|------|------|------|
-| 📨 Gmail API | ⭐⭐⭐ | 有梯子，稳定好用 |
-| ✉️ QQ / 163 IMAP | ⭐ | 国内直连，授权码即用 |
+> ⚠️ **QQ 和 163 邮箱不推荐使用** — 国内邮箱的 IMAP 存在安全策略限制，即使开启授权码也可能被服务器拒绝访问。推荐使用 Gmail API。
 
-在前端「数据源管理」页面即可配置，不需要改代码。
+**📨 Gmail API 接入步骤：**
+
+1. 在 [Google Cloud Console](https://console.cloud.google.com/apis/credentials) 创建 OAuth 桌面客户端，下载 `credentials.json` 放到 `backend/`
+2. 运行 `python backend/setup_gmail_oauth.py`，浏览器授权
+3. 在 `.env` 中配置 `GMAIL_CLIENT_ID`、`GMAIL_CLIENT_SECRET`、`GMAIL_REFRESH_TOKEN`
+4. 如需国内访问，配置 `HTTP_PROXY=http://127.0.0.1:你的代理端口`
+5. ⚠️ Google Cloud 项目需发布为"生产模式"，否则 Token 7 天过期
+
+让 163/QQ 邮箱自动转发到 Gmail，即可实现全链路自动抓取。
 
 ---
 

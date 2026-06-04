@@ -130,6 +130,23 @@ def delete_web_source(src_id: int, db: Session = Depends(get_db)):
     return {"ok": True}
 
 
+@router.post("/sources/web/test")
+def test_web_source(data: dict, db: Session = Depends(get_db)):
+    """Test if a web source URL is reachable."""
+    import requests
+    url = data.get("url", "")
+    if not url:
+        return {"ok": False, "message": "URL 不能为空"}
+    try:
+        resp = requests.get(url, timeout=15, headers={"User-Agent": "NewsDigest/1.0"})
+        if resp.status_code < 400:
+            return {"ok": True, "message": f"连接成功 (HTTP {resp.status_code}, {len(resp.content)} bytes)"}
+        else:
+            return {"ok": False, "message": f"HTTP {resp.status_code}"}
+    except Exception as e:
+        return {"ok": False, "message": f"连接失败: {str(e)[:100]}"}
+
+
 # ── Fetch Logs ───────────────────────────────────────────────────
 
 @router.get("/fetch/logs")

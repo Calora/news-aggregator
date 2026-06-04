@@ -101,12 +101,16 @@ function EmailTab() {
 
   return (
     <div>
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 text-sm text-yellow-800">
-        <p className="font-medium mb-1">QQ 邮箱 / 163 邮箱配置提示：</p>
+      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 text-sm text-amber-800">
+        <p className="font-medium mb-1">⚠️ QQ / 163 邮箱不推荐使用</p>
+        <p className="text-xs mb-1">国内邮箱的 IMAP 存在安全策略限制，即使开启授权码也可能被服务器拒绝访问（已知 163 返回 "Unsafe Login"）。</p>
+        <p className="text-xs font-medium mt-2 mb-1">✅ 推荐：Gmail API</p>
         <ul className="list-disc list-inside space-y-0.5 text-xs">
-          <li>QQ邮箱：设置 → 账户 → POP3/IMAP/SMTP → 开启 IMAP → 生成授权码</li>
-          <li>163邮箱：设置 → POP3/SMTP/IMAP → 开启 IMAP → 新增授权码</li>
-          <li>请填写<b>授权码</b>而非登录密码，系统会加密存储</li>
+          <li>在 Google Cloud Console 创建 OAuth 桌面客户端，下载 credentials.json 放到 backend/</li>
+          <li>运行 <code className="bg-amber-100 px-1 rounded">python backend/setup_gmail_oauth.py</code> 完成授权</li>
+          <li>在 .env 中配置 GMAIL_CLIENT_ID / GMAIL_CLIENT_SECRET / GMAIL_REFRESH_TOKEN</li>
+          <li>⚠️ Google Cloud 项目需发布为「生产模式」，否则 Token 7 天过期</li>
+          <li>将 163/QQ 邮箱的邮件自动转发到 Gmail，即可全链路自动抓取</li>
         </ul>
       </div>
 
@@ -224,12 +228,14 @@ function WebTab() {
 
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({ name: '', url: '', source_type: 'RSS' })
+  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null)
 
   const createMutation = useMutation({
     mutationFn: () => api.createWebSource(form),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['webSources'] })
       setShowForm(false)
+      setForm({ name: '', url: '', source_type: 'RSS' })
     },
   })
 
@@ -238,9 +244,15 @@ function WebTab() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['webSources'] }),
   })
 
+  const testMutation = useMutation({
+    mutationFn: api.testWebSource,
+    onSuccess: (res) => setTestResult(res),
+    onError: () => setTestResult({ ok: false, message: '测试请求失败' }),
+  })
+
   const builtInSources = [
-    { name: 'InfoQ', url: 'https://feed.infoq.com/', type: 'RSS', group: '用户订阅' },
-    { name: 'Medium (Blockchain)', url: 'https://medium.com/feed/tag/blockchain', type: 'RSS', group: '用户订阅' },
+    { name: 'InfoQ', url: 'https://feed.infoq.com/', type: 'RSS', group: '订阅源' },
+    { name: 'Medium (Blockchain)', url: 'https://medium.com/feed/tag/blockchain', type: 'RSS', group: '订阅源' },
     { name: 'Ethresear.ch', url: 'https://ethresear.ch/posts.rss', type: 'RSS', group: '区块链' },
     { name: 'The Block', url: 'https://www.theblock.co/rss', type: 'RSS', group: '区块链' },
     { name: 'Messari', url: 'https://messari.io/feed', type: 'RSS', group: '区块链' },
@@ -255,21 +267,85 @@ function WebTab() {
 
   return (
     <div>
+      {/* 添加信源表单 */}
       <div className="mb-4">
-        <h3 className="text-sm font-medium text-gray-700 mb-2">预置信源（点击快速添加）</h3>
-{(['用户订阅', '区块链', 'ZK/密码学', 'AI/技术'] as const).map((group) => {
-          const sources = builtInSources.filter((s) => (s as any).group === group)
-          if (sources.length === 0) return null
+        <button
+          onClick={() => { setShowForm(!showForm); setTestResult(null) }}
+          className="px-3 py-1.5 text-sm border border-dashed rounded-lg text-gray-500 hover:border-blue-300 hover:text-blue-600 transition-colors"
+        >
+          {showForm ? '收起表单' : '+ 添加信源'}
+        </button>
+      </div>
+
+      {showForm && (
+        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 space-y-3">
+          <input
+            placeholder="信源名称（如：某技术博客）"
+            value={form.name}
+            onChange={(e) => setForm({ ...form, name: e.target.value })}
+            className="w-full px-3 py-1.5 text-sm border rounded-lg"
+          />
+          <input
+            placeholder="URL（RSS 或网页地址）"
+            value={form.url}
+            onChange={(e) => { setForm({ ...form, url: e.target.value }); setTestResult(null) }}
+            className="w-full px-3 py-1.5 text-sm border rounded-lg"
+          />
+          <select
+            value={form.source_type}
+            onChange={(e) => setForm({ ...form, source_type: e.target.value })}
+            className="w-full px-3 py-1.5 text-sm border rounded-lg"
+          >
+            <option value="RSS">RSS</option>
+            <option value="WEB">网页抓取</option>
+          </select>
+          {testResult && (
+            <div className={`text-xs px-3 py-1.5 rounded ${testResult.ok ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'}`}>
+              {testResult.ok ? '✓ ' : '✗ '}{testResult.message}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <button
+              onClick={() => createMutation.mutate()}
+              disabled={createMutation.isPending || !form.name || !form.url}
+              className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            >
+              {createMutation.isPending ? '保存中...' : '保存'}
+            </button>
+            <button
+              onClick={() => testMutation.mutate(form.url)}
+              disabled={testMutation.isPending || !form.url}
+              className="px-4 py-1.5 text-sm border rounded-lg text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+            >
+              {testMutation.isPending ? '测试中...' : '测试连接'}
+            </button>
+            <button
+              onClick={() => { setShowForm(false); setTestResult(null) }}
+              className="px-4 py-1.5 text-sm border rounded-lg text-gray-500 hover:bg-gray-50"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 预置信源 */}
+      <div className="mb-4">
+        <h3 className="text-sm font-medium text-gray-700 mb-2">预置信源（一键添加）</h3>
+        {(['订阅源', '区块链', 'ZK/密码学', 'AI/技术'] as const).map((group) => {
+          const groupSources = builtInSources.filter((s) => (s as any).group === group)
+          if (groupSources.length === 0) return null
           return (
             <div key={group} className="mb-2">
               <span className="text-[10px] text-gray-400 font-medium mr-2">{group}</span>
               <div className="flex flex-wrap gap-1.5 mt-1">
-                {sources.map((s) => (
+                {groupSources.map((s) => (
                   <button
                     key={s.url}
                     onClick={() => {
                       setForm({ name: s.name, url: s.url, source_type: s.type })
                       setShowForm(true)
+                      setTestResult(null)
                     }}
                     className="px-2 py-1 text-xs border rounded-lg text-gray-500 hover:border-blue-300 hover:text-blue-600 transition-colors"
                   >
@@ -282,47 +358,7 @@ function WebTab() {
         })}
       </div>
 
-      {showForm && (
-        <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4 space-y-3">
-          <input
-            placeholder="信源名称"
-            value={form.name}
-            onChange={(e) => setForm({ ...form, name: e.target.value })}
-            className="w-full px-3 py-1.5 text-sm border rounded-lg"
-          />
-          <input
-            placeholder="URL (RSS/网页)"
-            value={form.url}
-            onChange={(e) => setForm({ ...form, url: e.target.value })}
-            className="w-full px-3 py-1.5 text-sm border rounded-lg"
-          />
-          <select
-            value={form.source_type}
-            onChange={(e) => setForm({ ...form, source_type: e.target.value })}
-            className="w-full px-3 py-1.5 text-sm border rounded-lg"
-          >
-            <option value="RSS">RSS</option>
-            <option value="WEB">网页抓取</option>
-            <option value="ARXIV">arXiv API</option>
-          </select>
-          <div className="flex gap-2">
-            <button
-              onClick={() => createMutation.mutate()}
-              disabled={createMutation.isPending}
-              className="px-4 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              保存
-            </button>
-            <button
-              onClick={() => setShowForm(false)}
-              className="px-4 py-1.5 text-sm border rounded-lg text-gray-500 hover:bg-gray-50"
-            >
-              取消
-            </button>
-          </div>
-        </div>
-      )}
-
+      {/* 已添加的信源 */}
       {isLoading ? (
         <div className="text-gray-400 text-sm">加载中...</div>
       ) : (

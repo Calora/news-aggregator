@@ -18,12 +18,6 @@ DEFAULT_RSS_SOURCES = [
     ("Zero Knowledge Blog", "https://zeroknowledge.fm/feed", "RSS"),
     # AI / Tech
     ("Hacker News", "https://hnrss.org/frontpage", "RSS"),
-    # 政策法规 — 中国政府网 + 部委（优先RSS，无法提供则WEB抓取）
-    ("国务院政策", "http://www.gov.cn/rss/", "WEB"),
-    ("国家网信办", "https://www.cac.gov.cn/wxzw/A0936index_1.htm", "WEB"),
-    ("工信部政策", "https://www.miit.gov.cn/zwgk/zcwj/index.html", "WEB"),
-    ("国家数据局", "https://www.ndrc.gov.cn/fzggw/jgsj/sjj/", "WEB"),
-    ("中央网络安全和信息化委员会", "http://www.cac.gov.cn/rss/", "WEB"),
 ]
 
 
