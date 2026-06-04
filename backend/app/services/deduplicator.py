@@ -6,15 +6,26 @@ from sqlalchemy.orm import Session
 from ..models import Article
 
 
+def _normalize_url(url: str) -> str:
+    """Strip fragment/hash and trailing slash to normalize URLs for comparison."""
+    if not url:
+        return url
+    url = url.split("#")[0]
+    url = url.rstrip("/")
+    return url
+
+
 def is_duplicate(title: str, url: str, db: Session) -> bool:
     """Check if a new article (not yet persisted) would be a duplicate.
     Call BEFORE saving to DB. Returns True if duplicate exists.
     """
-    # 1. Exact URL match
+    # 1. URL match (normalized — strip #fragment)
     if url:
-        existing = db.query(Article).filter(Article.url == url).first()
-        if existing:
-            return True
+        normalized = _normalize_url(url)
+        all_articles = db.query(Article).all()
+        for a in all_articles:
+            if _normalize_url(a.url) == normalized:
+                return True
 
     # 2. Title similarity check (no time window — check all)
     title_tokens = _tokenize(title)
@@ -42,12 +53,13 @@ def cleanup_duplicates(db: Session) -> int:
     seen_urls = set()
 
     for article in all_articles:
-        # URL-based dedup (exact match)
+        # URL-based dedup (normalized — strip #fragment)
         if article.url:
-            if article.url in seen_urls:
+            norm = _normalize_url(article.url)
+            if norm in seen_urls:
                 to_delete.add(article.id)
                 continue
-            seen_urls.add(article.url)
+            seen_urls.add(norm)
 
         title_tokens = _tokenize(article.title)
         if len(title_tokens) < 2:
