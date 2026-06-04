@@ -27,14 +27,15 @@ NewsDigest 帮你做三件事：
 
 ## 🪄 看一眼长什么样
 
+### 📅 每日日报
 <p align="center">
-  <img src="docs/daily-report.png" alt="每日日报" width="48%">
-  &nbsp;
-  <img src="docs/all-news.png" alt="全部动态" width="48%">
+  <img src="docs/screenshot-daily.png" alt="每日日报" width="85%">
 </p>
 
-> 📅 **每日日报**（左）— 左侧日期归档，4 个领域分组，带评分 + 推荐理由 + 标签  
-> 📋 **全部动态**（右）— 多维度筛选，卡片式浏览，7 分以下自动过滤
+### 📋 全部动态
+<p align="center">
+  <img src="docs/screenshot-all.png" alt="全部动态" width="85%">
+</p>
 
 ---
 
