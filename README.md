@@ -240,7 +240,7 @@ Gmail API 需要 OAuth 授权，跑 `python backend/setup_gmail_oauth.py` 完成
 
 ## 📄 License
 
-Copyright © 2026 [QingSia](https://github.com/Calora) · Apache License 2.0
+Copyright © 2026 [Calora Sia](https://github.com/Calora) · Apache License 2.0
 
 ---
 

@@ -40,7 +40,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <footer className="text-center py-4 text-xs text-gray-400">
-        Copyright © 2026 QingSia · Licensed under Apache 2.0
+        Copyright © 2026 Calora Sia · Licensed under Apache 2.0
       </footer>
     </div>
   )
