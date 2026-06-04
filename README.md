@@ -150,6 +150,46 @@ news-aggregator/
 
 ---
 
+## 🎯 自定义关注领域
+
+系统默认围绕 **区块链 / AI / 密码学与隐私计算 / 数字资产** 四个领域做分类和过滤。如果你关注的方向不同，可以自行修改，**不需要改后端架构**。
+
+### 涉及的文件（3 处）
+
+| 文件 | 改什么 |
+|------|--------|
+| `backend/app/services/classifier.py` | 修改 `CLASSIFY_PROMPT` 中的领域定义、排除规则、判断原则 |
+| `frontend/src/types.ts` | 修改 `Domain` 类型定义，与后端保持一致 |
+| `frontend/src/components/FilterBar.tsx` | 修改领域筛选按钮的显示文字和顺序 |
+
+### 示例：改为关注"生物医药 + AI"
+
+**1. 修改分类器 Prompt**（`classifier.py` 第 15-49 行）
+
+```python
+# 将原来的 Blockchain / AI / 数字资产 / Crypto & Privacy
+# 替换为你的领域：
+- 生物医药: 药物发现/蛋白质预测/基因组学/临床试验AI
+- 大模型: LLM/Agent/训练推理/AI基础设施
+- 医疗器械: 影像诊断/手术机器人/可穿戴设备
+```
+
+**2. 修改前端类型**（`types.ts`）
+
+```typescript
+export type Domain = '生物医药' | '大模型' | '医疗器械'
+```
+
+**3. 修改筛选栏**（`FilterBar.tsx`）
+
+```typescript
+const domains: Domain[] = ['生物医药', '大模型', '医疗器械']
+```
+
+重启后端后，后续抓取的文章会按新领域分类。已有文章可以点「手动抓取」触发重新分类。
+
+---
+
 ## 🔌 可选：接入私人邮箱
 
 如果你有 Medium、InfoQ 等邮件订阅，可以接入 Gmail 自动将邮件中的文章链接纳入新闻流。
