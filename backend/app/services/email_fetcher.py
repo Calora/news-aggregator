@@ -101,13 +101,10 @@ def _fetch_account(acc: EmailAccount, db_session) -> int:
             if existing_id:
                 existing = db_session.query(Article).filter(Article.id == existing_id).first()
                 if existing:
-                    existing.title = subject[:1024]
                     if body_text:
                         existing.content_preview = body_text[:500]
-                    existing.publish_date = beijing_now()
                     existing.fetched_at = beijing_now()
-                    existing.relevance_score = 0
-                    existing.summary_cn = None
+                    existing.publish_date = beijing_now()
                     db_session.commit()
                 continue
 

@@ -95,12 +95,10 @@ def _fetch_rss(src: WebSource, db_session) -> int:
         if existing_id:
             existing = db_session.query(Article).filter(Article.id == existing_id).first()
             if existing:
-                existing.title = title[:1024]
-                existing.content_preview = content[:500] if content else existing.content_preview
-                existing.publish_date = beijing_now()
+                if content:
+                    existing.content_preview = content[:500]
                 existing.fetched_at = beijing_now()
-                existing.relevance_score = 0  # Re-classify with new content
-                existing.summary_cn = None
+                existing.publish_date = beijing_now()
                 db_session.commit()
             continue
 
