@@ -28,13 +28,27 @@ NewsDigest 帮你做三件事：
 ## 🪄 看一眼长什么样
 
 ### 📅 每日日报
+
+左侧日期归档，每天 4 个领域分组，带评分 + 推荐理由 + 标签，早 8 点自动生成。
+
 <p align="center">
   <img src="docs/screenshot-daily.png" alt="每日日报" width="85%">
 </p>
 
 ### 📋 全部动态
+
+多维度筛选，卡片式浏览，7 分以下自动过滤噪音。按领域、类型、标签自由组合。
+
 <p align="center">
   <img src="docs/screenshot-all.png" alt="全部动态" width="85%">
+</p>
+
+### ⚙️ 数据源管理
+
+预置信源一键添加，输入 URL 即可测试连通性。支持 RSS + 网页两种抓取模式。
+
+<p align="center">
+  <img src="docs/screenshot-sources.png" alt="数据源管理" width="85%">
 </p>
 
 ---
