@@ -5,6 +5,7 @@
 每天醒来，AI 已经帮你挑好了最值得读的 10 条技术新闻。不再被几百封邮件和几十个 RSS 源淹没。
 
 <p align="center">
+  <a href="https://github.com/Calora/news-aggregator/stargazers"><img src="https://img.shields.io/github/stars/Calora/news-aggregator?style=flat-square&color=yellow" alt="Stars"></a>
   <img src="https://img.shields.io/badge/Backend-FastAPI-009688?style=flat-square" alt="FastAPI">
   <img src="https://img.shields.io/badge/Frontend-React-61DAFB?style=flat-square&logo=react&logoColor=white" alt="React">
   <img src="https://img.shields.io/badge/AI-DeepSeek-4B6BFB?style=flat-square" alt="DeepSeek">
@@ -268,6 +269,12 @@ DeepSeek API Key 没配或失效。系统依赖 AI 做翻译和中文摘要。
 
 Gmail API 需要 OAuth 授权，跑 `python backend/setup_gmail_oauth.py` 完成。QQ/163 需要去邮箱设置里生成授权码（不是登录密码）。
 </details>
+
+---
+
+## ⭐ 如果对你有用
+
+如果这个项目帮你省下了每天刷新闻的时间，欢迎 [Star](https://github.com/Calora/news-aggregator) ⭐ 支持一下。你的 Star 是我持续更新的动力，也欢迎提 Issue 和 PR。
 
 ---
 
