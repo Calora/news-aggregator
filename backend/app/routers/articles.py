@@ -170,7 +170,7 @@ def sync_to_feishu(data: dict | None = None, db: Session = Depends(get_db)):
     topic_url = None
     if topic_doc_id:
         all_articles_text = "\n\n".join([
-            f"[{i+1}] {a.title}\n摘要: {a.summary_cn or a.content_preview or ''[:150]}\n标签: {', '.join(a.tags or [])}"
+            f"[{i+1}] {a.title}\n链接: {a.url or '无'}\n摘要: {a.summary_cn or a.content_preview or ''[:150]}\n标签: {', '.join(a.tags or [])}"
             for i, a in enumerate(bookmarks)
         ])
 
@@ -207,11 +207,20 @@ def sync_to_feishu(data: dict | None = None, db: Session = Depends(get_db)):
             topic_blocks.append(_p(f"核心观点：{t.get('thesis', '')}"))
             materials = t.get('materials', [])
             if materials:
-                material_titles = []
+                topic_blocks.append(_p("参考素材："))
                 for m_id in materials:
                     if isinstance(m_id, int) and 1 <= m_id <= len(bookmarks):
-                        material_titles.append(bookmarks[m_id - 1].title[:40])
-                topic_blocks.append(_p(f"参考素材：{' · '.join(material_titles) if material_titles else str(materials)}"))
+                        bm = bookmarks[m_id - 1]
+                        url = bm.url or ''
+                        topic_blocks.append(_rich([
+                            {"text_run": {"content": f"[{m_id}] {bm.title[:60]}", "text_element_style": {"bold": True}}},
+                        ]))
+                        if url:
+                            topic_blocks.append(_rich([
+                                {"text_run": {"content": url, "text_element_style": {"link": {"url": url}}}},
+                            ]))
+                        if bm.summary_cn:
+                            topic_blocks.append(_p(f"    {bm.summary_cn[:120]}"))
             topic_blocks.append(_p(f"写作角度：{t.get('angle', '')}"))
             topic_blocks.append(_empty())
 
