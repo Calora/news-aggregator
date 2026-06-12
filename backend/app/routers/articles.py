@@ -113,41 +113,109 @@ def toggle_bookmark(article_id: int, db: Session = Depends(get_db)):
     return {"ok": True, "bookmarked": article.is_bookmarked}
 
 
-@router.post("/bookmarks/group")
-def group_bookmarks(db: Session = Depends(get_db)):
-    """AI-group bookmarked articles by topic for writing."""
-    from ..services.bookmark_grouper import group_bookmarks as do_group
-    return do_group(db)
-
-
 @router.post("/bookmarks/sync-to-feishu")
-def sync_to_feishu(data: dict, db: Session = Depends(get_db)):
-    """Sync selected bookmark groups to Feishu documents.
-    Body: {"group_indices": [0, 1, ...]} — indices from grouping result."""
-    from ..services.bookmark_grouper import group_bookmarks as do_group
-    from ..services.feishu_service import create_doc, build_doc_blocks
+def sync_to_feishu(db: Session = Depends(get_db)):
+    """Sync ALL bookmarked articles to Feishu.
+    - Material doc: all bookmarks (title, summary, tags, url, score)
+    - Topic doc: AI-generated article topic suggestions based on materials
+    Only syncs articles that haven't been synced before."""
+    from ..services.feishu_service import create_doc, _h1, _h2, _p, _rich, _empty
+    from ..services.ai_client import chat
 
-    grouping = do_group(db)
-    if "error" in grouping:
-        return {"ok": False, "error": grouping["error"]}
+    bookmarks = db.query(Article).filter(
+        Article.is_bookmarked == True,
+        Article.relevance_score >= 7,
+    ).order_by(Article.publish_date.desc()).all()
 
-    indices = data.get("group_indices", [])
-    groups = grouping.get("groups", [])
-    docs_created = []
-    errors = []
+    if not bookmarks:
+        return {"ok": False, "error": "没有收藏的文章"}
 
-    for idx in indices:
-        if idx >= len(groups):
-            continue
-        group = groups[idx]
-        try:
-            blocks = build_doc_blocks(group)
-            doc = create_doc(f"【写作素材】{group['topic']}", blocks)
-            docs_created.append({"topic": group["topic"], "url": doc["url"], "article_count": len(group["articles"])})
-        except Exception as e:
-            errors.append({"topic": group["topic"], "error": str(e)})
+    new_articles = [a for a in bookmarks if not a.synced_to_feishu]
+    already_synced = len(bookmarks) - len(new_articles)
 
-    return {"ok": True, "docs_created": docs_created, "errors": errors}
+    # ── Doc 1: Material collection ──
+    if new_articles:
+        blocks = [_h1("写作素材库")]
+        for a in new_articles:
+            blocks.append(_h2(a.title))
+            if a.url:
+                blocks.append(_rich([
+                    {"text_run": {"content": "链接：", "text_element_style": {"bold": True}}},
+                    {"text_run": {"content": a.url or "", "text_element_style": {"link": {"url": a.url or ""}}}},
+                ]))
+            if a.summary_cn:
+                blocks.append(_p(f"摘要：{a.summary_cn}"))
+            tags_str = " · ".join(a.tags or [])
+            if tags_str:
+                blocks.append(_p(f"标签：{tags_str}"))
+            blocks.append(_p(f"领域：{' · '.join(a.domains or [])}　｜　评分：★{a.relevance_score}　｜　来源：{a.source_name}"))
+            blocks.append(_empty())
+
+        from datetime import date
+        material_doc = create_doc(f"写作素材汇总 {date.today().isoformat()}", blocks)
+        for a in new_articles:
+            a.synced_to_feishu = True
+        db.commit()
+    else:
+        material_doc = None
+
+    # ── Doc 2: Topic suggestions ──
+    all_articles_text = "\n\n".join([
+        f"[{i+1}] {a.title}\n摘要: {a.summary_cn or a.content_preview or ''[:150]}\n标签: {', '.join(a.tags or [])}"
+        for i, a in enumerate(bookmarks)
+    ])
+
+    topic_prompt = f"""你是资深技术编辑。基于以下收藏的技术文章，推荐 5-8 个公众号文章选题。
+
+对每个选题，输出：
+- title: 吸引人的标题（15-25字，要有悬念或明确判断）
+- thesis: 文章核心观点（一句话说清楚要论证什么）
+- materials: 使用哪些素材编号（如 [1, 3, 5]）
+- angle: 写作角度（从什么切入点展开论述）
+
+素材：
+{all_articles_text[:4000]}
+
+返回 JSON: {{"topics": [{{"title": "...", "thesis": "...", "materials": [1,2], "angle": "..."}}]}}"""
+
+    topic_result = chat(topic_prompt, "You are a senior tech editor. Always reply with valid JSON only.")
+    import json, re
+    m = re.search(r"```(?:json)?\s*(\[.*?\]|\{.*?\})\s*```", topic_result, re.DOTALL)
+    if m:
+        topic_result = m.group(1)
+    try:
+        topics_data = json.loads(topic_result)
+        if isinstance(topics_data, dict):
+            topics = topics_data.get("topics", [])
+        else:
+            topics = topics_data
+    except json.JSONDecodeError:
+        topics = []
+
+    topic_blocks = [_h1("公众号选题推荐"), _p(f"基于 {len(bookmarks)} 篇收藏文章生成以下选题："), _empty()]
+    for i, t in enumerate(topics[:8], 1):
+        topic_blocks.append(_h2(f"选题 {i}：{t.get('title', '')}"))
+        topic_blocks.append(_p(f"核心观点：{t.get('thesis', '')}"))
+        materials = t.get('materials', [])
+        if materials:
+            material_titles = []
+            for m_id in materials:
+                if isinstance(m_id, int) and 1 <= m_id <= len(bookmarks):
+                    material_titles.append(bookmarks[m_id - 1].title[:40])
+            topic_blocks.append(_p(f"参考素材：{' · '.join(material_titles) if material_titles else str(materials)}"))
+        topic_blocks.append(_p(f"写作角度：{t.get('angle', '')}"))
+        topic_blocks.append(_empty())
+
+    topic_doc = create_doc(f"公众号选题推荐 {date.today().isoformat()}", topic_blocks)
+
+    return {
+        "ok": True,
+        "total_bookmarks": len(bookmarks),
+        "new_synced": len(new_articles),
+        "already_synced": already_synced,
+        "material_doc": material_doc["url"] if material_doc else None,
+        "topic_doc": topic_doc["url"],
+    }
 
 
 @router.get("/bookmarks/test-feishu")

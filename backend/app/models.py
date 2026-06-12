@@ -72,6 +72,7 @@ class Article(Base):
     is_daily_pick = Column(Boolean, default=False)
     is_read = Column(Boolean, default=False)
     is_bookmarked = Column(Boolean, default=False)
+    synced_to_feishu = Column(Boolean, default=False)
 
     def to_dict(self):
         return {
@@ -93,6 +94,7 @@ class Article(Base):
             "is_daily_pick": self.is_daily_pick,
             "is_read": self.is_read,
             "is_bookmarked": self.is_bookmarked,
+            "synced_to_feishu": self.synced_to_feishu,
         }
 
 
