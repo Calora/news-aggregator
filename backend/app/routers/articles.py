@@ -119,6 +119,7 @@ def sync_to_feishu(data: dict | None = None, db: Session = Depends(get_db)):
     - Material doc: all bookmarks (title, summary, tags, url, score)
     - Topic doc: AI-generated article topic suggestions based on materials
     Only syncs articles that haven't been synced before."""
+    from datetime import date
     from ..services.feishu_service import create_doc, _h1, _h2, _p, _rich, _empty
     from ..services.ai_client import chat
 
@@ -151,7 +152,6 @@ def sync_to_feishu(data: dict | None = None, db: Session = Depends(get_db)):
             blocks.append(_p(f"领域：{' · '.join(a.domains or [])}　｜　评分：★{a.relevance_score}　｜　来源：{a.source_name}"))
             blocks.append(_empty())
 
-        from datetime import date
         material_doc = create_doc(f"写作素材汇总 {date.today().isoformat()}", blocks)
         for a in new_articles:
             a.synced_to_feishu = True
