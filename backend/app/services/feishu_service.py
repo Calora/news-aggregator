@@ -27,6 +27,32 @@ def _get_access_token() -> str:
     return _TOKEN_CACHE["token"]
 
 
+def append_to_doc(doc_id: str, blocks: list[dict]) -> dict:
+    """Append blocks to an existing document. Returns doc info."""
+    token = _get_access_token()
+
+    # Check document exists
+    resp = requests.get(f"{FEISHU_API}/docx/v1/documents/{doc_id}",
+        headers={"Authorization": f"Bearer {token}"}, timeout=10, proxies=_NO_PROXY)
+    data = resp.json()
+    if data.get("code") != 0:
+        raise Exception(f"Doc not found: {data}")
+
+    # Add blocks in batches (max 50 per call)
+    for i in range(0, len(blocks), 50):
+        batch = blocks[i:i + 50]
+        resp = requests.post(f"{FEISHU_API}/docx/v1/documents/{doc_id}/blocks/{doc_id}/children", headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }, json={"children": batch}, timeout=30, proxies=_NO_PROXY)
+        data = resp.json()
+        if data.get("code") != 0:
+            raise Exception(f"Feishu append failed (batch {i // 50 + 1}): {data}")
+
+    doc_url = f"https://calosia.feishu.cn/docx/{doc_id}"
+    return {"doc_id": doc_id, "url": doc_url}
+
+
 def create_doc(title: str, blocks: list[dict], folder_token: str = "") -> dict:
     """Create a Feishu Docx document with structured content. Returns doc info."""
     token = _get_access_token()
@@ -111,6 +137,28 @@ def build_doc_blocks(group: dict) -> list[dict]:
         blocks.append(_p(f"{j}. {t}"))
 
     return blocks
+
+
+def clear_doc(doc_id: str, keep_title: bool = True) -> bool:
+    """Remove all child blocks from a document. Returns True on success."""
+    token = _get_access_token()
+    # Get all children
+    resp = requests.get(f"{FEISHU_API}/docx/v1/documents/{doc_id}/blocks/{doc_id}/children",
+        headers={"Authorization": f"Bearer {token}"}, timeout=10, proxies=_NO_PROXY)
+    data = resp.json()
+    if data.get("code") != 0:
+        return False
+
+    items = data["data"].get("items", [])
+    if not items:
+        return True
+
+    # Delete each child block
+    for item in items:
+        bid = item["block_id"]
+        requests.delete(f"{FEISHU_API}/docx/v1/documents/{doc_id}/blocks/{bid}",
+            headers={"Authorization": f"Bearer {token}"}, timeout=10, proxies=_NO_PROXY)
+    return True
 
 
 def test_connection() -> tuple[bool, str]:

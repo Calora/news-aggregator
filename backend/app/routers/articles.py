@@ -120,8 +120,12 @@ def sync_to_feishu(data: dict | None = None, db: Session = Depends(get_db)):
     - Topic doc: AI-generated article topic suggestions based on materials
     Only syncs articles that haven't been synced before."""
     from datetime import date
-    from ..services.feishu_service import create_doc, _h1, _h2, _p, _rich, _empty
+    from ..services.feishu_service import append_to_doc, clear_doc, _h1, _h2, _p, _rich, _empty
     from ..services.ai_client import chat
+    from ..config import settings
+
+    material_doc_id = settings.feishu_material_doc_id
+    topic_doc_id = settings.feishu_topic_doc_id
 
     bookmarks = db.query(Article).filter(
         Article.is_bookmarked == True,
@@ -134,9 +138,11 @@ def sync_to_feishu(data: dict | None = None, db: Session = Depends(get_db)):
     new_articles = [a for a in bookmarks if not a.synced_to_feishu]
     already_synced = len(bookmarks) - len(new_articles)
 
-    # ── Doc 1: Material collection ──
-    if new_articles:
-        blocks = [_h1("写作素材库")]
+    # ── Doc 1: Append new material to existing doc ──
+    material_url = None
+    if new_articles and material_doc_id:
+        date_header = _p(f"━━ 📅 同步日期：{date.today().isoformat()} ━━")
+        blocks = [date_header, _empty()]
         for a in new_articles:
             blocks.append(_h2(a.title))
             if a.url:
@@ -152,20 +158,23 @@ def sync_to_feishu(data: dict | None = None, db: Session = Depends(get_db)):
             blocks.append(_p(f"领域：{' · '.join(a.domains or [])}　｜　评分：★{a.relevance_score}　｜　来源：{a.source_name}"))
             blocks.append(_empty())
 
-        material_doc = create_doc(f"写作素材汇总 {date.today().isoformat()}", blocks)
+        doc_info = append_to_doc(material_doc_id, blocks)
+        material_url = doc_info["url"]
         for a in new_articles:
             a.synced_to_feishu = True
         db.commit()
-    else:
-        material_doc = None
+    elif material_doc_id:
+        material_url = f"https://calosia.feishu.cn/docx/{material_doc_id}"
 
-    # ── Doc 2: Topic suggestions ──
-    all_articles_text = "\n\n".join([
-        f"[{i+1}] {a.title}\n摘要: {a.summary_cn or a.content_preview or ''[:150]}\n标签: {', '.join(a.tags or [])}"
-        for i, a in enumerate(bookmarks)
-    ])
+    # ── Doc 2: Clear + regenerate topic doc ──
+    topic_url = None
+    if topic_doc_id:
+        all_articles_text = "\n\n".join([
+            f"[{i+1}] {a.title}\n摘要: {a.summary_cn or a.content_preview or ''[:150]}\n标签: {', '.join(a.tags or [])}"
+            for i, a in enumerate(bookmarks)
+        ])
 
-    topic_prompt = f"""你是资深技术编辑。基于以下收藏的技术文章，推荐 5-8 个公众号文章选题。
+        topic_prompt = f"""你是资深技术编辑。基于以下收藏的技术文章，推荐 5-8 个公众号文章选题。
 
 对每个选题，输出：
 - title: 吸引人的标题（15-25字，要有悬念或明确判断）
@@ -178,43 +187,45 @@ def sync_to_feishu(data: dict | None = None, db: Session = Depends(get_db)):
 
 返回 JSON: {{"topics": [{{"title": "...", "thesis": "...", "materials": [1,2], "angle": "..."}}]}}"""
 
-    topic_result = chat(topic_prompt, "You are a senior tech editor. Always reply with valid JSON only.")
-    import json, re
-    m = re.search(r"```(?:json)?\s*(\[.*?\]|\{.*?\})\s*```", topic_result, re.DOTALL)
-    if m:
-        topic_result = m.group(1)
-    try:
-        topics_data = json.loads(topic_result)
-        if isinstance(topics_data, dict):
-            topics = topics_data.get("topics", [])
-        else:
-            topics = topics_data
-    except json.JSONDecodeError:
-        topics = []
+        topic_result = chat(topic_prompt, "You are a senior tech editor. Always reply with valid JSON only.")
+        import json, re
+        m = re.search(r"```(?:json)?\s*(\[.*?\]|\{.*?\})\s*```", topic_result, re.DOTALL)
+        if m:
+            topic_result = m.group(1)
+        try:
+            topics_data = json.loads(topic_result)
+            if isinstance(topics_data, dict):
+                topics = topics_data.get("topics", [])
+            else:
+                topics = topics_data
+        except json.JSONDecodeError:
+            topics = []
 
-    topic_blocks = [_h1("公众号选题推荐"), _p(f"基于 {len(bookmarks)} 篇收藏文章生成以下选题："), _empty()]
-    for i, t in enumerate(topics[:8], 1):
-        topic_blocks.append(_h2(f"选题 {i}：{t.get('title', '')}"))
-        topic_blocks.append(_p(f"核心观点：{t.get('thesis', '')}"))
-        materials = t.get('materials', [])
-        if materials:
-            material_titles = []
-            for m_id in materials:
-                if isinstance(m_id, int) and 1 <= m_id <= len(bookmarks):
-                    material_titles.append(bookmarks[m_id - 1].title[:40])
-            topic_blocks.append(_p(f"参考素材：{' · '.join(material_titles) if material_titles else str(materials)}"))
-        topic_blocks.append(_p(f"写作角度：{t.get('angle', '')}"))
-        topic_blocks.append(_empty())
+        topic_blocks = [_h1("公众号选题推荐"), _p(f"基于 {len(bookmarks)} 篇收藏文章生成以下选题（{date.today().isoformat()} 更新）："), _empty()]
+        for i, t in enumerate(topics[:8], 1):
+            topic_blocks.append(_h2(f"选题 {i}：{t.get('title', '')}"))
+            topic_blocks.append(_p(f"核心观点：{t.get('thesis', '')}"))
+            materials = t.get('materials', [])
+            if materials:
+                material_titles = []
+                for m_id in materials:
+                    if isinstance(m_id, int) and 1 <= m_id <= len(bookmarks):
+                        material_titles.append(bookmarks[m_id - 1].title[:40])
+                topic_blocks.append(_p(f"参考素材：{' · '.join(material_titles) if material_titles else str(materials)}"))
+            topic_blocks.append(_p(f"写作角度：{t.get('angle', '')}"))
+            topic_blocks.append(_empty())
 
-    topic_doc = create_doc(f"公众号选题推荐 {date.today().isoformat()}", topic_blocks)
+        clear_doc(topic_doc_id)
+        doc_info = append_to_doc(topic_doc_id, topic_blocks)
+        topic_url = doc_info["url"]
 
     return {
         "ok": True,
         "total_bookmarks": len(bookmarks),
         "new_synced": len(new_articles),
         "already_synced": already_synced,
-        "material_doc": material_doc["url"] if material_doc else None,
-        "topic_doc": topic_doc["url"],
+        "material_doc": material_url,
+        "topic_doc": topic_url,
     }
 
 

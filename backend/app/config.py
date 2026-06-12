@@ -24,6 +24,8 @@ class Settings(BaseSettings):
     feishu_app_id: str = ""
     feishu_app_secret: str = ""
     feishu_folder_token: str = ""
+    feishu_material_doc_id: str = ""
+    feishu_topic_doc_id: str = ""
 
     @property
     def parsed_email_accounts(self) -> list[dict]:
