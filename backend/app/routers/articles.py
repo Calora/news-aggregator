@@ -114,7 +114,7 @@ def toggle_bookmark(article_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/bookmarks/sync-to-feishu")
-def sync_to_feishu(db: Session = Depends(get_db)):
+def sync_to_feishu(data: dict | None = None, db: Session = Depends(get_db)):
     """Sync ALL bookmarked articles to Feishu.
     - Material doc: all bookmarks (title, summary, tags, url, score)
     - Topic doc: AI-generated article topic suggestions based on materials

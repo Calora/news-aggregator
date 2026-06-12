@@ -41,14 +41,16 @@ def create_doc(title: str, blocks: list[dict], folder_token: str = "") -> dict:
         raise Exception(f"Feishu create doc failed: {data}")
     doc_id = data["data"]["document"]["document_id"]
 
-    # 2. Add blocks as children of root
-    resp = requests.post(f"{FEISHU_API}/docx/v1/documents/{doc_id}/blocks/{doc_id}/children", headers={
-        "Authorization": f"Bearer {token}",
-        "Content-Type": "application/json",
-    }, json={"children": blocks}, timeout=30, proxies=_NO_PROXY)
-    data = resp.json()
-    if data.get("code") != 0:
-        raise Exception(f"Feishu add blocks failed: {data}")
+    # 2. Add blocks in batches (max 50 per call)
+    for i in range(0, len(blocks), 50):
+        batch = blocks[i:i + 50]
+        resp = requests.post(f"{FEISHU_API}/docx/v1/documents/{doc_id}/blocks/{doc_id}/children", headers={
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json",
+        }, json={"children": batch}, timeout=30, proxies=_NO_PROXY)
+        data = resp.json()
+        if data.get("code") != 0:
+            raise Exception(f"Feishu add blocks failed (batch {i // 50 + 1}): {data}")
 
     doc_url = f"https://calosia.feishu.cn/docx/{doc_id}"
     return {"doc_id": doc_id, "url": doc_url, "title": title}

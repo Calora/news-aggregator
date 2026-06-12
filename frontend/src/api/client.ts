@@ -29,7 +29,7 @@ export const api = {
     request<ArticleListResponse>(`/bookmarks?page=${page}&page_size=${pageSize}`),
 
   syncToFeishu: (_unused?: number[]) =>
-    request<any>(`/bookmarks/sync-to-feishu`, { method: 'POST' }),
+    request<any>(`/bookmarks/sync-to-feishu`, { method: 'POST', body: '{}' }),
 
   // Daily Report
   getTodayReport: () =>
