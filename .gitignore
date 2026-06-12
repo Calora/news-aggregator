@@ -28,3 +28,6 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
+# Feishu credentials
+backend/feishu_token.json

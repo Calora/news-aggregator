@@ -111,3 +111,47 @@ def toggle_bookmark(article_id: int, db: Session = Depends(get_db)):
     article.is_bookmarked = not article.is_bookmarked
     db.commit()
     return {"ok": True, "bookmarked": article.is_bookmarked}
+
+
+@router.post("/bookmarks/group")
+def group_bookmarks(db: Session = Depends(get_db)):
+    """AI-group bookmarked articles by topic for writing."""
+    from ..services.bookmark_grouper import group_bookmarks as do_group
+    return do_group(db)
+
+
+@router.post("/bookmarks/sync-to-feishu")
+def sync_to_feishu(data: dict, db: Session = Depends(get_db)):
+    """Sync selected bookmark groups to Feishu documents.
+    Body: {"group_indices": [0, 1, ...]} — indices from grouping result."""
+    from ..services.bookmark_grouper import group_bookmarks as do_group
+    from ..services.feishu_service import create_doc, build_doc_blocks
+
+    grouping = do_group(db)
+    if "error" in grouping:
+        return {"ok": False, "error": grouping["error"]}
+
+    indices = data.get("group_indices", [])
+    groups = grouping.get("groups", [])
+    docs_created = []
+    errors = []
+
+    for idx in indices:
+        if idx >= len(groups):
+            continue
+        group = groups[idx]
+        try:
+            blocks = build_doc_blocks(group)
+            doc = create_doc(f"【写作素材】{group['topic']}", blocks)
+            docs_created.append({"topic": group["topic"], "url": doc["url"], "article_count": len(group["articles"])})
+        except Exception as e:
+            errors.append({"topic": group["topic"], "error": str(e)})
+
+    return {"ok": True, "docs_created": docs_created, "errors": errors}
+
+
+@router.get("/bookmarks/test-feishu")
+def test_feishu_connection():
+    from ..services.feishu_service import test_connection
+    ok, msg = test_connection()
+    return {"ok": ok, "message": msg}

@@ -20,6 +20,11 @@ class Settings(BaseSettings):
 
     email_accounts: str = ""
 
+    # Feishu (Lark) API
+    feishu_app_id: str = ""
+    feishu_app_secret: str = ""
+    feishu_folder_token: str = ""
+
     @property
     def parsed_email_accounts(self) -> list[dict]:
         """Parse EMAIL_ACCOUNTS env var into list of dicts.

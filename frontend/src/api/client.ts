@@ -28,6 +28,12 @@ export const api = {
   getBookmarks: (page = 1, pageSize = 20) =>
     request<ArticleListResponse>(`/bookmarks?page=${page}&page_size=${pageSize}`),
 
+  groupBookmarks: () =>
+    request<any>(`/bookmarks/group`, { method: 'POST' }),
+
+  syncToFeishu: (groupIndices: number[]) =>
+    request<any>(`/bookmarks/sync-to-feishu`, { method: 'POST', body: JSON.stringify({ group_indices: groupIndices }) }),
+
   // Daily Report
   getTodayReport: () =>
     request<DailyReport>('/report/today'),
