@@ -43,19 +43,19 @@ def api_post(path: str) -> dict | None:
 
 
 def is_backend_alive() -> bool:
-    result = api_get("/articles?limit=1")
+    result = api_get("/articles?page_size=1")
     return result is not None and "items" in result
 
 
 def get_latest_fetch_time() -> datetime | None:
-    result = api_get("/articles?limit=1&sort_by=fetched_at&sort_order=desc")
+    result = api_get("/articles?page_size=1&score_min=0&sort_by=fetched_at&sort_order=desc")
     if result and result.get("items"):
         return datetime.fromisoformat(result["items"][0]["fetched_at"])
     return None
 
 
 def get_unprocessed_count() -> int:
-    result = api_get("/articles?limit=1&score_min=0&score_max=0")
+    result = api_get("/articles?page_size=1&score_min=0&score_max=0")
     if result and "total" in result:
         return result["total"]
     return -1
@@ -127,7 +127,7 @@ def health_report() -> str:
 def auto_fix_loop():
     """自动修复循环：查问题 → 修复 → 再查 → 直到正常或无法修复"""
     for attempt in range(3):
-        result = api_get("/articles?limit=1&sort_by=fetched_at&sort_order=desc")
+        result = api_get("/articles?page_size=1&score_min=0&sort_by=fetched_at&sort_order=desc")
         if not result or "items" not in result:
             print(f"[尝试{attempt+1}] 后端不可达，无法自动修复（需手动启动 start.bat）")
             return False
@@ -140,7 +140,8 @@ def auto_fix_loop():
             continue
 
         latest = datetime.fromisoformat(items[0]["fetched_at"])
-        age_h = (datetime.now(BEIJING_TZ) - latest).total_seconds() / 3600
+        latest_dt = latest if latest.tzinfo else latest.replace(tzinfo=BEIJING_TZ)
+        age_h = (datetime.now(BEIJING_TZ) - latest_dt).total_seconds() / 3600
         if age_h >= 6:
             print(f"[尝试{attempt+1}] 数据已{age_h:.0f}小时未更新，触发抓取...")
             trigger_fetch()

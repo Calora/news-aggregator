@@ -1,5 +1,12 @@
 from pydantic_settings import BaseSettings
+from pydantic import field_validator
 from typing import Optional
+from pathlib import Path
+
+
+BACKEND_DIR = Path(__file__).resolve().parents[1]
+DEFAULT_DATABASE_URL = f"sqlite:///{(BACKEND_DIR / 'news_aggregator.db').as_posix()}"
+DEFAULT_ENV_FILE = BACKEND_DIR / ".env"
 
 
 class Settings(BaseSettings):
@@ -7,7 +14,7 @@ class Settings(BaseSettings):
     deepseek_base_url: str = "https://api.deepseek.com"
     deepseek_model: str = "deepseek-chat"
 
-    database_url: str = "sqlite:///./news_aggregator.db"
+    database_url: str = DEFAULT_DATABASE_URL
     update_interval_hours: int = 4
 
     # HTTP proxy for external APIs (e.g., Gmail)
@@ -26,6 +33,20 @@ class Settings(BaseSettings):
     feishu_folder_token: str = ""
     feishu_material_doc_id: str = ""
     feishu_topic_doc_id: str = ""
+
+    @field_validator("database_url")
+    @classmethod
+    def normalize_database_url(cls, value: str) -> str:
+        sqlite_prefix = "sqlite:///"
+        if not value.startswith(sqlite_prefix):
+            return value
+        database_path = value[len(sqlite_prefix):]
+        if database_path.startswith(":memory:"):
+            return value
+        path = Path(database_path)
+        if path.is_absolute():
+            return value
+        return f"{sqlite_prefix}{(BACKEND_DIR / path).resolve().as_posix()}"
 
     @property
     def parsed_email_accounts(self) -> list[dict]:
@@ -50,7 +71,7 @@ class Settings(BaseSettings):
                 })
         return accounts
 
-    model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
+    model_config = {"env_file": DEFAULT_ENV_FILE, "env_file_encoding": "utf-8", "extra": "ignore"}
 
 
 settings = Settings()

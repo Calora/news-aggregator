@@ -5,10 +5,9 @@ import DomainBadge from './DomainBadge'
 
 interface Props {
   article: Article
-  compact?: boolean
 }
 
-export default function ArticleCard({ article, compact }: Props) {
+export default function ArticleCard({ article }: Props) {
   const queryClient = useQueryClient()
 
   const bookmarkMutation = useMutation({

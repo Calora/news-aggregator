@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
 import type { Article, Domain } from '../types'
-import { useState, useCallback } from 'react'
+import { useEffect, useState } from 'react'
 
 const domainOrder: Domain[] = ['Blockchain', 'AI', '数字资产', 'Crypto & Privacy']
 const domainMeta: Record<Domain, { label: string; emoji: string; color: string; border: string }> = {
@@ -21,6 +21,12 @@ export default function DailyReportPage() {
     queryFn: api.getReportList,
   })
 
+  useEffect(() => {
+    if (!selectedDate && reportList?.length) {
+      setSelectedDate(reportList[0].date)
+    }
+  }, [reportList, selectedDate])
+
   // Fetch current report
   const { data: report, isLoading } = useQuery({
     queryKey: ['dailyReport', selectedDate],
@@ -35,10 +41,6 @@ export default function DailyReportPage() {
     },
   })
 
-  if (isLoading) {
-    return <div className="flex justify-center py-20 text-gray-400 text-sm">加载中...</div>
-  }
-
   const sections = report?.sections ?? []
   const totalArticles = sections.reduce(
     (sum, s) => sum + ((s as any).articles?.length ?? (s as any).article_ids?.length ?? 0), 0,
@@ -46,6 +48,7 @@ export default function DailyReportPage() {
 
   const todayStr = report?.date ? formatDate(report.date) : formatDate(today())
   const isToday = !selectedDate || selectedDate === today()
+  const isLatestArchived = selectedDate === reportList?.[0]?.date
 
   return (
     <div className="flex gap-8">
@@ -108,7 +111,9 @@ export default function DailyReportPage() {
         <div className="mb-6">
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">{todayStr}</h1>
           <p className="text-sm text-gray-400 mt-1">
-            {totalArticles > 0 ? `收录 ${totalArticles} 条精选` : '每 4 小时自动更新 · AI 精选'}
+            {totalArticles > 0
+              ? `收录 ${totalArticles} 条精选${!isToday && isLatestArchived ? ' · 最近一期' : ''}`
+              : '每 4 小时自动更新 · AI 精选'}
           </p>
         </div>
 
@@ -124,7 +129,9 @@ export default function DailyReportPage() {
         </div>
 
         {/* Report content */}
-        {totalArticles === 0 ? (
+        {isLoading ? (
+          <div className="flex justify-center py-20 text-gray-400 text-sm">加载中...</div>
+        ) : totalArticles === 0 ? (
           <div className="text-center py-16">
             <p className="text-gray-400 text-sm mb-2">📭 日报尚未生成</p>
             <p className="text-gray-300 text-xs">每 4 小时自动抓取更新，稍后再来</p>
@@ -162,6 +169,7 @@ export default function DailyReportPage() {
 
 function ReportItem({ article }: { article: Article }) {
   const queryClient = useQueryClient()
+  const tags = asList(article.tags)
 
   const bookmarkMutation = useMutation({
     mutationFn: () => api.toggleBookmark(article.id),
@@ -207,9 +215,9 @@ function ReportItem({ article }: { article: Article }) {
               </p>
             </div>
           )}
-          {article.tags.length > 0 && (
+          {tags.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-2">
-              {article.tags.slice(0, 4).map((tag) => (
+              {tags.slice(0, 4).map((tag) => (
                 <span key={tag} className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-slate-100 text-slate-600">{tag}</span>
               ))}
             </div>
@@ -242,8 +250,30 @@ function _fmtEmoji(f: string): string {
   }
 }
 
+function asList(value: unknown): string[] {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === 'string')
+  if (typeof value === 'string') {
+    if (['Blockchain', 'AI', '数字资产', 'Crypto & Privacy'].includes(value)) return [value]
+    const domains: string[] = []
+    let remaining = value
+    for (const domain of ['Crypto & Privacy', 'Blockchain', 'AI', '数字资产']) {
+      if (remaining.includes(domain)) {
+        domains.push(domain)
+        remaining = remaining.replace(domain, ' ')
+      }
+    }
+    if (domains.length > 0 && remaining.trim().replace(/[ ,;|/]+/g, '') === '') return domains
+    return value.split(/[ ,;|/]+/).filter(Boolean)
+  }
+  return []
+}
+
 function today(): string {
-  return new Date().toISOString().slice(0, 10)
+  const d = new Date()
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
 }
 
 function formatDate(dateStr: string): string {

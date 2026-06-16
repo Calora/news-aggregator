@@ -74,6 +74,24 @@ class Article(Base):
     is_bookmarked = Column(Boolean, default=False)
     synced_to_feishu = Column(Boolean, default=False)
 
+    @staticmethod
+    def _json_list(value):
+        if isinstance(value, list):
+            return value
+        if isinstance(value, str):
+            if value in {"Blockchain", "AI", "数字资产", "Crypto & Privacy"}:
+                return [value]
+            domains = []
+            remaining = value
+            for domain in ["Crypto & Privacy", "Blockchain", "AI", "数字资产"]:
+                if domain in remaining:
+                    domains.append(domain)
+                    remaining = remaining.replace(domain, " ")
+            if domains and not remaining.strip(" ,;|/"):
+                return domains
+            return [item for item in value.replace(",", " ").split() if item]
+        return []
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -85,8 +103,8 @@ class Article(Base):
             "authors": self.authors,
             "publish_date": self.publish_date.isoformat() if self.publish_date else None,
             "fetched_at": self.fetched_at.isoformat() if self.fetched_at else None,
-            "domains": self.domains or [],
-            "tags": self.tags or [],
+            "domains": self._json_list(self.domains),
+            "tags": self._json_list(self.tags),
             "format": self.format,
             "relevance_score": self.relevance_score,
             "summary_cn": self.summary_cn,

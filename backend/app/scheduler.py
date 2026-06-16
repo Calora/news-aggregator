@@ -2,6 +2,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
+from .time_utils import CST
 
 
 scheduler = BackgroundScheduler()
@@ -24,7 +25,7 @@ def start_scheduler():
     # Daily report generation at 8:00 AM Beijing time
     scheduler.add_job(
         _generate_report_job,
-        CronTrigger(hour=8, minute=0),
+        CronTrigger(hour=8, minute=0, timezone="Asia/Shanghai"),
         id="daily_report_8am",
         replace_existing=True,
     )
@@ -49,11 +50,11 @@ def start_scheduler():
 
 def _generate_report_job():
     from .database import SessionLocal
-    from datetime import date
+    from .time_utils import beijing_today
     db = SessionLocal()
     try:
         from .routers.daily_report import do_generate_report
-        do_generate_report(db, date.today())
+        do_generate_report(db, beijing_today())
     finally:
         db.close()
 
@@ -62,12 +63,11 @@ def _health_check_job():
     """Self-monitoring: detect stale data, unprocessed articles, and auto-fix."""
     from .database import SessionLocal
     from .models import Article
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
     import logging
 
     logger = logging.getLogger("health_check")
-    beijing_tz = timezone(timedelta(hours=8))
-    now = datetime.now(beijing_tz)
+    now = datetime.now(CST).replace(tzinfo=None)
 
     db = SessionLocal()
     try:

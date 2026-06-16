@@ -1,5 +1,5 @@
 from datetime import date, datetime, timedelta
-from ..time_utils import beijing_now
+from ..time_utils import beijing_now, beijing_today
 from typing import Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -32,7 +32,7 @@ def list_reports(db: Session = Depends(get_db)):
 
 @router.get("/report/today")
 def get_today_report(db: Session = Depends(get_db)):
-    today = date.today()
+    today = beijing_today()
     report = db.query(DailyReport).filter(DailyReport.date == today).first()
     if not report:
         return {"date": today.isoformat(), "sections": [], "article_ids": []}
@@ -72,7 +72,7 @@ def get_report(report_date: str, db: Session = Depends(get_db)):
 
 @router.post("/report/generate")
 def generate_report(target_date: Optional[str] = Query(None), db: Session = Depends(get_db)):
-    report_date = date.fromisoformat(target_date) if target_date else date.today()
+    report_date = date.fromisoformat(target_date) if target_date else beijing_today()
     return do_generate_report(db, report_date)
 
 

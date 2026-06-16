@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { api } from '../api/client'
-import type { EmailAccount, WebSource } from '../types'
 
 export default function SourcesPage() {
   const queryClient = useQueryClient()

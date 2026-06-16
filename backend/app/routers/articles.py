@@ -9,19 +9,16 @@ from ..schemas import ArticleResponse
 router = APIRouter()
 
 
-def _domain_filter_clause(domain_list: list[str]):
-    """Build SQLite JSON filter: check if ANY domain in the list is in the JSON array."""
-    if not domain_list:
-        return None
-    # Use json_each to check if any value in the domains JSON array matches
-    conditions = []
-    for d in domain_list:
-        # SQLite json_each approach: EXISTS (SELECT 1 FROM json_each(domains) WHERE value = 'X')
-        conditions.append(
-            text("EXISTS (SELECT 1 FROM json_each(articles.domains) WHERE value = :domain)")
-            .bindparams(domain=d)
+def _domain_filter_clauses(domain_list: list[str]):
+    """Build SQLite JSON filters requiring every selected domain to be present."""
+    clauses = []
+    for index, domain in enumerate(domain_list):
+        param_name = f"domain_{index}"
+        clauses.append(
+            text(f"EXISTS (SELECT 1 FROM json_each(articles.domains) WHERE value = :{param_name})")
+            .bindparams(**{param_name: domain})
         )
-    return or_(*conditions) if len(conditions) > 1 else conditions[0]
+    return clauses
 
 
 @router.get("/articles")
@@ -34,11 +31,16 @@ def list_articles(
     date_from: Optional[str] = Query(None),
     date_to: Optional[str] = Query(None),
     keyword: Optional[str] = Query(None),
+    sort_by: str = Query("publish_date"),
+    sort_order: str = Query("desc"),
+    limit: Optional[int] = Query(None, ge=1, le=100),
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     db: Session = Depends(get_db),
 ):
     query = db.query(Article)
+    if limit is not None:
+        page_size = limit
 
     # Hard filter: only show score >= 7 (user doesn't want junk)
     query = query.filter(Article.relevance_score >= score_min)
@@ -54,15 +56,21 @@ def list_articles(
     # Use LIKE with quotes to match exact JSON array elements (avoid partial matches like "AI" in "Blockchain")
     domain_list = [d.strip() for d in domains.split(",")] if domains else []
     if domain_list:
-        for d in domain_list:
-            query = query.filter(Article.domains.like(f'%\"{d}\"%'))
+        for domain_clause in _domain_filter_clauses(domain_list):
+            query = query.filter(domain_clause)
+
+    tag_list = [t.strip() for t in tags.split(",")] if tags else []
+    for tag in tag_list:
+        query = query.filter(Article.tags.like(f'%\"{tag}\"%'))
 
     if keyword:
         like = f"%{keyword}%"
         query = query.filter(
             or_(
-                Article.title.contains(like),
-                Article.summary_cn.contains(like),
+                Article.title.like(like),
+                Article.summary_cn.like(like),
+                Article.content_preview.like(like),
+                Article.tags.like(like),
             )
         )
 
@@ -72,8 +80,16 @@ def list_articles(
         query = query.filter(Article.publish_date <= date_to + "T23:59:59")
 
     total = query.count()
+    sort_columns = {
+        "publish_date": Article.publish_date,
+        "fetched_at": Article.fetched_at,
+        "relevance_score": Article.relevance_score,
+        "id": Article.id,
+    }
+    sort_column = sort_columns.get(sort_by, Article.publish_date)
+    sort_expr = sort_column.asc() if sort_order.lower() == "asc" else sort_column.desc()
     items = (
-        query.order_by(Article.publish_date.desc())
+        query.order_by(sort_expr)
         .offset((page - 1) * page_size)
         .limit(page_size)
         .all()

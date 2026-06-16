@@ -1,5 +1,6 @@
 """Daily pipeline: fetch all sources → AI processing → generate report."""
 from datetime import datetime
+from ..time_utils import beijing_today
 from ..database import SessionLocal
 from ..models import Article
 
@@ -25,8 +26,7 @@ def run_daily_pipeline():
         # Generate daily report
         if email_new + web_new + processed > 0:
             from ..routers.daily_report import do_generate_report
-            from datetime import date
-            do_generate_report(db, date.today())
+            do_generate_report(db, beijing_today())
 
         print(f"[{datetime.now()}] Pipeline done: email={email_new}, web={web_new}, "
               f"processed={processed}")
