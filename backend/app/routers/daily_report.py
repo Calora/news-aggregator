@@ -11,6 +11,12 @@ router = APIRouter()
 DOMAIN_ORDER = ["Blockchain", "AI", "数字资产", "Crypto & Privacy"]
 
 
+def _article_dedupe_key(article: Article) -> str:
+    from ..services.deduplicator import _normalize_url
+    if article.url:
+        return f"url:{_normalize_url(article.url)}"
+    return f"title:{article.title.strip().lower()}"
+
 @router.get("/report/list")
 def list_reports(db: Session = Depends(get_db)):
     """Return all daily reports with date and headline (first article title)."""
@@ -102,6 +108,7 @@ def do_generate_report(db: Session, report_date: date):
     sections = []
     all_ids = []
     used_ids = set()  # Track articles already placed in a section
+    used_keys = set()  # Track duplicate URLs/titles across sections
 
     for domain in DOMAIN_ORDER:
         domain_articles = [
@@ -112,7 +119,17 @@ def do_generate_report(db: Session, report_date: date):
             continue
 
         domain_articles.sort(key=lambda a: a.relevance_score, reverse=True)
-        top = domain_articles[:3]
+        top = []
+        for article in domain_articles:
+            key = _article_dedupe_key(article)
+            if key in used_keys:
+                continue
+            top.append(article)
+            used_keys.add(key)
+            if len(top) >= 3:
+                break
+        if not top:
+            continue
         section_article_ids = [a.id for a in top]
         used_ids.update(section_article_ids)
         all_ids.extend(section_article_ids)

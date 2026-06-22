@@ -1,18 +1,45 @@
 """Article deduplication using title similarity and URL matching."""
 import re
 from datetime import datetime, timedelta
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from ..time_utils import beijing_now
 from sqlalchemy.orm import Session
 from ..models import Article
 
 
 def _normalize_url(url: str) -> str:
-    """Strip fragment/hash and trailing slash to normalize URLs for comparison."""
+    """Normalize URLs for comparison by removing fragments and tracking params."""
     if not url:
         return url
-    url = url.split("#")[0]
-    url = url.rstrip("/")
-    return url
+    parsed = urlsplit(url.strip())
+    query = urlencode(
+        [
+            (key, value)
+            for key, value in parse_qsl(parsed.query, keep_blank_values=True)
+            if not _is_tracking_param(key)
+        ],
+        doseq=True,
+    )
+    path = parsed.path.rstrip("/")
+    return urlunsplit((
+        parsed.scheme.lower(),
+        parsed.netloc.lower(),
+        path,
+        query,
+        "",
+    ))
+
+
+def _is_tracking_param(key: str) -> bool:
+    key = key.lower()
+    return key.startswith("utm_") or key in {
+        "fbclid",
+        "gclid",
+        "igshid",
+        "mc_cid",
+        "mc_eid",
+        "ref",
+    }
 
 
 def is_duplicate(title: str, url: str, db: Session) -> int | None:
