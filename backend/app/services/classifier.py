@@ -4,6 +4,9 @@ from datetime import datetime
 from sqlalchemy.orm import Session
 from ..models import Article
 from .ai_client import chat_json
+import logging
+
+logger = logging.getLogger(__name__)
 
 PRICE_KEYWORDS = [
     "涨跌", "行情", "走势", "K线", "多空", "点位", "爆仓", "合约",
@@ -102,20 +105,20 @@ SUMMARY_PROMPT = """你是技术编辑。请将以下内容翻译并摘要，全
 返回JSON: {{"title_cn": "中文标题", "summary": "50-80字中文摘要", "reason": "推荐理由（评分<7可为空）"}}"""
 
 
-def process_unclassified(db: Session) -> int:
+def process_unclassified(db: Session, limit: int = 60) -> int:
     """Process all articles that haven't been classified yet."""
     # Priority 1: score=0 articles (never processed)
     articles = db.query(Article).filter(
         Article.relevance_score == 0,
-    ).limit(30).all()
+    ).order_by(Article.fetched_at.desc()).limit(limit).all()
 
     processed = 0
     for article in articles:
         try:
             if _process_one(article, db):
                 processed += 1
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.exception("Failed to process article %s: %s", article.id, exc)
 
     # Priority 2: high-score articles without Chinese summary or domains (CCF-A etc.)
     need_summary = db.query(Article).filter(
@@ -127,8 +130,8 @@ def process_unclassified(db: Session) -> int:
         try:
             if _classify_only(article):
                 processed += 1
-        except Exception:
-            pass
+        except Exception as exc:
+            logger.exception("Failed to summarize article %s: %s", article.id, exc)
 
     # Priority 3: articles with English titles that need translation
     for article in list(need_summary)[:]:
@@ -136,8 +139,8 @@ def process_unclassified(db: Session) -> int:
             try:
                 if _classify_only(article):
                     processed += 1
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.exception("Failed to translate article %s: %s", article.id, exc)
 
     db.commit()
     return processed

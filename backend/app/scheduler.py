@@ -2,7 +2,7 @@
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.interval import IntervalTrigger
 from apscheduler.triggers.cron import CronTrigger
-from .time_utils import CST
+from .time_utils import beijing_now_naive, beijing_today, to_beijing_naive
 
 
 scheduler = BackgroundScheduler()
@@ -50,7 +50,6 @@ def start_scheduler():
 
 def _generate_report_job():
     from .database import SessionLocal
-    from .time_utils import beijing_today
     db = SessionLocal()
     try:
         from .routers.daily_report import do_generate_report
@@ -63,11 +62,11 @@ def _health_check_job():
     """Self-monitoring: detect stale data, unprocessed articles, and auto-fix."""
     from .database import SessionLocal
     from .models import Article
-    from datetime import datetime, timedelta
+    from datetime import timedelta
     import logging
 
     logger = logging.getLogger("health_check")
-    now = datetime.now(CST).replace(tzinfo=None)
+    now = beijing_now_naive()
 
     db = SessionLocal()
     try:
@@ -76,9 +75,10 @@ def _health_check_job():
         # 1. Check if latest article is > 24h old
         latest = db.query(Article).order_by(Article.fetched_at.desc()).first()
         if latest:
-            age_h = (now - latest.fetched_at).total_seconds() / 3600
+            latest_fetched_at = to_beijing_naive(latest.fetched_at)
+            age_h = (now - latest_fetched_at).total_seconds() / 3600
             if age_h > 24:
-                issues.append(f"数据断流{age_h:.0f}小时，最新抓取: {latest.fetched_at.strftime('%m-%d %H:%M')}")
+                issues.append(f"数据断流{age_h:.0f}小时，最新抓取: {latest_fetched_at.strftime('%m-%d %H:%M')}")
         else:
             issues.append("数据库无文章")
 
@@ -86,7 +86,6 @@ def _health_check_job():
         unprocessed = db.query(Article).filter(Article.relevance_score == 0).count()
         if unprocessed > 20:
             issues.append(f"未处理文章积压: {unprocessed}篇")
-            # Auto-trigger processing
             from .services.classifier import process_unclassified
             for _ in range(10):
                 n = process_unclassified(db)
@@ -102,14 +101,15 @@ def _health_check_job():
         today_report = db.query(DailyReport).filter(DailyReport.date == now.date()).first()
         yesterday_report = db.query(DailyReport).filter(DailyReport.date == yesterday).first()
         if not today_report and not yesterday_report:
-            issues.append(f"最近2天无日报")
+            issues.append("最近2天无日报")
 
         # 4. Check email sources (Gmail OAuth token expiry)
         from .models import EmailAccount
         email_accounts = db.query(EmailAccount).filter(EmailAccount.enabled == True).all()
         for acc in email_accounts:
             if acc.last_fetch_at:
-                email_age_h = (now - acc.last_fetch_at).total_seconds() / 3600
+                last_fetch_at = to_beijing_naive(acc.last_fetch_at)
+                email_age_h = (now - last_fetch_at).total_seconds() / 3600
                 if email_age_h > 48:
                     issues.append(f"邮箱源 {acc.email} 超过{email_age_h:.0f}小时未拉取")
             if "gmail" in acc.email.lower():
@@ -124,7 +124,8 @@ def _health_check_job():
         if issues:
             logger.warning(f"健康检查发现问题({len(issues)}项): {'; '.join(issues)}")
         else:
-            logger.info(f"健康检查通过 | 最新文章: {latest.fetched_at.strftime('%m-%d %H:%M') if latest else 'N/A'} | 积压: {unprocessed} | 邮件: 正常")
+            latest_label = to_beijing_naive(latest.fetched_at).strftime('%m-%d %H:%M') if latest else 'N/A'
+            logger.info(f"健康检查通过 | 最新文章: {latest_label} | 积压: {unprocessed} | 邮件: 正常")
 
     except Exception as e:
         logger.error(f"健康检查异常: {e}")
